@@ -1,0 +1,55 @@
+[
+  {
+    "type": "function",
+    "name": "getPredictionOutcome",
+    "inputs": [
+      {
+        "name": "predictionId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "resolved",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "outcome",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPredictionResolution",
+    "inputs": [
+      {
+        "name": "predictionId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "resolved",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "resolutionKind",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "winningOptionIndex",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "stateMutability": "view"
+  }
+]

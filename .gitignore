@@ -1,0 +1,20 @@
+out
+cache
+broadcast
+coverage
+.gas-snapshot
+
+# Local env
+.env
+.env.*
+!.env.example
+
+# Local editors / OS files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Reinstallable third-party dependencies
+lib/
