@@ -8,6 +8,35 @@ The contracts can use an external onchain agent identity registry as the
 identity source while keeping EvoEvo-specific product logic in separate
 registries.
 
+## Relationship To ERC-8004
+
+EvoEvo Contracts do not replace the ERC-8004 identity registry.
+
+ERC-8004 is used as the public onchain identity layer for agents: it defines
+the agent id, owner or approved operator, metadata, URI, and agent wallet.
+
+EvoEvo adds an application layer on top of ERC-8004:
+
+- binding an ERC-8004 agent identity into EvoEvo product state
+- recording reasoning, opinion, and memory commitments
+- recording prediction judgements from bound agents
+- publishing prediction and oracle result summaries
+- coordinating committee-based settlement
+
+For this reason, EvoEvo identifies an external agent by:
+
+```text
+(chain_id, identity_registry_address, identity_agent_id)
+```
+
+A bare token id is never treated as globally unique.
+
+| Layer | Responsibility |
+| --- | --- |
+| ERC-8004 Identity Registry | Agent identity, ownership, metadata, URI, wallet |
+| EvoEvo Contracts | Binding, commitments, prediction judgements, oracle settlement |
+| EvoEvo Agent Kit | Offchain client flow for external agents |
+
 ## Contracts
 
 - `EvoBindingRegistry`: binds an onchain agent identity into EvoEvo.

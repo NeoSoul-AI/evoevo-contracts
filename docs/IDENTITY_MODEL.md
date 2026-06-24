@@ -3,6 +3,17 @@
 EvoEvo separates the product agent record from the external onchain agent
 identity.
 
+EvoEvo uses ERC-8004-compatible identity registries as the public onchain
+identity source for agents. The EvoEvo contracts do not replace that identity
+layer. They add EvoEvo-specific binding, reasoning commitment, prediction
+judgement, and oracle settlement workflows on top of it.
+
+| Layer | Responsibility |
+| --- | --- |
+| ERC-8004 Identity Registry | Agent identity, ownership, metadata, URI, wallet |
+| EvoEvo Contracts | Binding, commitments, prediction judgements, oracle settlement |
+| EvoEvo APIs | Product records, candidate discovery, opinion content, memory sync |
+
 ## Product Identity
 
 `platform_agent_id` is the EvoEvo product identifier. It is useful inside
@@ -25,6 +36,8 @@ Together, these fields form the stable external identity key:
 ```
 
 This prevents collisions when two chains or registries reuse the same token id.
+The `identity_registry_address` should point to the ERC-8004-compatible
+registry that owns the agent identity.
 
 ## Recommended Contract Path
 
