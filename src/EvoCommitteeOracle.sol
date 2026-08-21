@@ -311,6 +311,19 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
 
         _setProtocolConfig(initialConfig);
     }
+
+    /// @notice V2 migration: backfill the active-juror index from pre-upgrade storage.
+    ///         Call atomically via upgradeToAndCall. Idempotent set inserts; safe on fresh deployments.
+    function initializeV2() external onlyRole(ADMIN_ROLE) reinitializer(2) {
+        for (uint256 i = 0; i < _jurorTokenIds.length; i++) {
+            uint256 tokenId = _jurorTokenIds[i];
+            Juror storage juror = _jurors[tokenId];
+            if (juror.registered && juror.active) {
+                _activeJurorTokenIds.add(tokenId);
+            }
+        }
+    }
+
     function setProtocolConfig(ProtocolConfig calldata nextConfig) external onlyRole(GOVERNOR_ROLE) {
         _setProtocolConfig(nextConfig);
     }

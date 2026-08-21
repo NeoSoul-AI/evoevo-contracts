@@ -677,6 +677,20 @@ contract EvoCommitteeOracleTest is Test {
         oracle.withdraw();
     }
 
+    function test_InitializeV2_OnlyAdminAndOnce() public {
+        vm.prank(stranger);
+        vm.expectRevert(); // AccessControlUnauthorizedAccount
+        oracle.initializeV2();
+
+        vm.prank(admin);
+        oracle.initializeV2(); // 回填是幂等 set add，fresh 部署上调用无害
+        assertEq(oracle.getActiveJurorTokenIds().length, 4);
+
+        vm.prank(admin);
+        vm.expectRevert(); // InvalidInitialization
+        oracle.initializeV2();
+    }
+
     function _deployOracle() internal returns (EvoCommitteeOracle deployed) {
         EvoCommitteeOracle implementation = new EvoCommitteeOracle();
         bytes memory initData = abi.encodeCall(
