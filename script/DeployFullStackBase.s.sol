@@ -283,6 +283,7 @@ abstract contract DeployFullStackBase is Script {
             );
             deployed.bindingImplementation = address(bindingImplementation_);
             deployed.binding = address(binding_);
+            EvoBindingRegistry(deployed.binding).initializeV2(deployed.agent);
         }
         {
             EvoEvolutionRegistry evolutionRegistryImplementation_ = new EvoEvolutionRegistry();

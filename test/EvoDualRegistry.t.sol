@@ -107,6 +107,20 @@ contract EvoDualRegistryTest is Test {
         assertEq(binding.legacyIdentityRegistry(), address(legacyNft));
     }
 
+    function test_RevertIf_InitializeV2_NotAdmin() public {
+        // 部署一份只做 V1 初始化的 registry
+        EvoBindingRegistry implementation = new EvoBindingRegistry();
+        ERC1967Proxy proxy = new ERC1967Proxy(
+            address(implementation), abi.encodeCall(EvoBindingRegistry.initialize, (address(legacyNft)))
+        );
+        EvoBindingRegistry freshBinding = EvoBindingRegistry(address(proxy));
+
+        address attacker = makeAddr("attacker");
+        vm.prank(attacker);
+        vm.expectRevert(); // AccessControlUnauthorizedAccount
+        freshBinding.initializeV2(address(publicNft));
+    }
+
     function test_Allowlist_AdminCanAddAndRemove() public {
         vm.prank(admin);
         binding.setIdentityRegistrySupported(address(rogueNft), true);

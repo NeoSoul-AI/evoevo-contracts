@@ -102,7 +102,7 @@ contract EvoBindingRegistry is Initializable, PausableUpgradeable, AccessControl
     ///         allowlist with both the legacy and public registries. For single-registry chains
     ///         (e.g. BSC) pass the existing registry; the allowlist then has one entry and the
     ///         V2 paths alias the legacy `_bindings` store.
-    function initializeV2(address publicIdentityRegistry_) external reinitializer(2) {
+    function initializeV2(address publicIdentityRegistry_) external onlyRole(ADMIN_ROLE) reinitializer(2) {
         if (publicIdentityRegistry_ == address(0)) revert ZeroAddress();
         if (publicIdentityRegistry_.code.length == 0) revert UnsupportedIdentityRegistry(publicIdentityRegistry_);
 
