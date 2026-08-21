@@ -596,6 +596,87 @@ contract EvoCommitteeOracleTest is Test {
         oracle.upgradeToAndCall(address(nextImpl), "");
     }
 
+    function test_EmergencyResolve_ChallengeUpheld_RefundsBond() public {
+        uint256 predictionId = 1;
+        vm.prank(admin);
+        oracle.setTreasury(makeAddr("treasury"));
+
+        _finalizeSelection(predictionId);
+        _submitMatchingPrimaryMembers(
+            predictionId, oracle.getPrimaryMembers(predictionId), 1, _twoOptionVotes(2, 0), bytes32("evidence")
+        );
+
+        vm.prank(challengeOperator);
+        oracle.challengePendingResult{value: CHALLENGE_BOND}(predictionId, bytes32("challenge-ev"), bytes32("reason"));
+
+        // 应急结果翻转获胜选项 => 挑战成立
+        uint8 resolvedKind = oracle.RESOLUTION_RESOLVED();
+        vm.prank(emergencyGuardian);
+        oracle.emergencyResolvePrediction(
+            predictionId, resolvedKind, 2, _twoOptionVotes(0, 2), bytes32("final-ev")
+        );
+
+        assertEq(oracle.pendingWithdrawals(challengeOperator), CHALLENGE_BOND);
+
+        uint256 balanceBefore = challengeOperator.balance;
+        vm.prank(challengeOperator);
+        oracle.withdraw();
+        assertEq(challengeOperator.balance, balanceBefore + CHALLENGE_BOND);
+        assertEq(address(oracle).balance, 0);
+    }
+
+    function test_EmergencyResolve_ChallengeRejected_ForfeitsBondToTreasury() public {
+        uint256 predictionId = 1;
+        address treasuryAddr = makeAddr("treasury");
+        vm.prank(admin);
+        oracle.setTreasury(treasuryAddr);
+
+        _finalizeSelection(predictionId);
+        _submitMatchingPrimaryMembers(
+            predictionId, oracle.getPrimaryMembers(predictionId), 1, _twoOptionVotes(2, 0), bytes32("evidence")
+        );
+
+        vm.prank(challengeOperator);
+        oracle.challengePendingResult{value: CHALLENGE_BOND}(predictionId, bytes32("challenge-ev"), bytes32("reason"));
+
+        // 应急结果与 pending 一致 => 挑战失败
+        uint8 resolvedKind = oracle.RESOLUTION_RESOLVED();
+        vm.prank(emergencyGuardian);
+        oracle.emergencyResolvePrediction(
+            predictionId, resolvedKind, 1, _twoOptionVotes(2, 0), bytes32("final-ev")
+        );
+
+        assertEq(oracle.pendingWithdrawals(challengeOperator), 0);
+        assertEq(oracle.pendingWithdrawals(treasuryAddr), CHALLENGE_BOND);
+
+        vm.prank(treasuryAddr);
+        oracle.withdraw();
+        assertEq(treasuryAddr.balance, CHALLENGE_BOND);
+    }
+
+    function test_RevertIf_SettlementNeedsTreasuryButUnset() public {
+        uint256 predictionId = 1;
+        _finalizeSelection(predictionId);
+        _submitMatchingPrimaryMembers(
+            predictionId, oracle.getPrimaryMembers(predictionId), 1, _twoOptionVotes(2, 0), bytes32("evidence")
+        );
+        vm.prank(challengeOperator);
+        oracle.challengePendingResult{value: CHALLENGE_BOND}(predictionId, bytes32("challenge-ev"), bytes32("reason"));
+
+        uint8 resolvedKind = oracle.RESOLUTION_RESOLVED();
+        vm.prank(emergencyGuardian);
+        vm.expectRevert(EvoCommitteeOracle.TreasuryNotSet.selector);
+        oracle.emergencyResolvePrediction(
+            predictionId, resolvedKind, 1, _twoOptionVotes(2, 0), bytes32("final-ev")
+        );
+    }
+
+    function test_RevertIf_WithdrawWithNothingPending() public {
+        vm.prank(stranger);
+        vm.expectRevert(EvoCommitteeOracle.NothingToWithdraw.selector);
+        oracle.withdraw();
+    }
+
     function _deployOracle() internal returns (EvoCommitteeOracle deployed) {
         EvoCommitteeOracle implementation = new EvoCommitteeOracle();
         bytes memory initData = abi.encodeCall(

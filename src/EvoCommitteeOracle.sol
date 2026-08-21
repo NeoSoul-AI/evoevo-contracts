@@ -146,6 +146,9 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     mapping(uint256 => mapping(bytes32 => uint16)) private _outcomeApprovalCounts;
     mapping(uint256 => mapping(bytes32 => bytes32)) private _outcomeCanonicalProposal;
 
+    address public treasury;
+    mapping(address => uint256) public pendingWithdrawals;
+
     event ProtocolConfigUpdated(
         uint16 primaryCount,
         uint16 reserveCount,
@@ -228,6 +231,9 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         uint256 finalizedAt,
         address finalizer
     );
+    event TreasuryUpdated(address indexed previousTreasury, address indexed newTreasury);
+    event ChallengeBondSettled(uint256 indexed predictionId, address indexed recipient, uint96 amount, bool challengeUpheld);
+    event BondWithdrawn(address indexed account, uint256 amount);
 
     error ZeroAddress();
     error InvalidAgentContract(address agentContract);
@@ -261,6 +267,9 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     error ChallengeNotFound(uint256 predictionId);
     error InsufficientChallengeBond(uint256 requiredBond, uint256 actualBond);
     error MaxActiveJurorsReached(uint256 maxActiveJurors);
+    error TreasuryNotSet();
+    error NothingToWithdraw();
+    error WithdrawTransferFailed();
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -313,6 +322,21 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
 
     function getActiveJurorTokenIds() external view returns (uint256[] memory) {
         return _activeJurorTokenIds.values();
+    }
+
+    function setTreasury(address newTreasury) external onlyRole(ADMIN_ROLE) {
+        if (newTreasury == address(0)) revert ZeroAddress();
+        emit TreasuryUpdated(treasury, newTreasury);
+        treasury = newTreasury;
+    }
+
+    function withdraw() external {
+        uint256 amount = pendingWithdrawals[msg.sender];
+        if (amount == 0) revert NothingToWithdraw();
+        pendingWithdrawals[msg.sender] = 0;
+        (bool ok,) = msg.sender.call{value: amount}("");
+        if (!ok) revert WithdrawTransferFailed();
+        emit BondWithdrawn(msg.sender, amount);
     }
 
     function registerJuror(uint256 memberTokenId, bytes32 metadataHash, uint256 nonce, uint256 deadline, bytes calldata signature)
@@ -574,6 +598,8 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         }
         if (_results[predictionId].resolved) revert PredictionAlreadyResolved(predictionId);
 
+        bytes32 pendingHash = assignment.pendingProposalHash;
+
         _validateResolution(resolutionKind, winningOptionIndex, optionVotes, evidenceBundleHash);
         bytes32 proposalHash = hashCommitteeResolution(
             predictionId, resolutionKind, winningOptionIndex, optionVotes, evidenceBundleHash
@@ -595,6 +621,8 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         _storeResult(predictionId, proposalHash, tally, msg.sender, true);
         assignment.status = PredictionStatus.EmergencyResolved;
 
+        _settleChallengeBond(predictionId, resolutionKind, winningOptionIndex, pendingHash);
+
         emit PredictionResolvedByEmergency(
             predictionId,
             proposalHash,
@@ -604,6 +632,28 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
             block.timestamp,
             msg.sender
         );
+    }
+
+    function _settleChallengeBond(
+        uint256 predictionId,
+        uint8 finalResolutionKind,
+        uint8 finalWinningOptionIndex,
+        bytes32 pendingProposalHash
+    ) internal {
+        Challenge storage challenge = _challenges[predictionId];
+        if (!challenge.exists || challenge.bondAmount == 0) return;
+
+        ProposalTally storage pendingTally = _proposalTallies[predictionId][pendingProposalHash];
+        bool upheld = finalResolutionKind != pendingTally.resolutionKind
+            || finalWinningOptionIndex != pendingTally.winningOptionIndex;
+
+        address recipient = upheld ? challenge.challenger : treasury;
+        if (recipient == address(0)) revert TreasuryNotSet();
+
+        uint96 amount = challenge.bondAmount;
+        challenge.bondAmount = 0;
+        pendingWithdrawals[recipient] += amount;
+        emit ChallengeBondSettled(predictionId, recipient, amount, upheld);
     }
 
     function getPredictionOutcome(uint256 predictionId) external view override returns (bool resolved, uint8 outcome) {
