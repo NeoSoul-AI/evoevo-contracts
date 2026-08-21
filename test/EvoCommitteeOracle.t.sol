@@ -202,6 +202,32 @@ contract EvoCommitteeOracleTest is Test {
         oracle.setJurorActive(1, false);
     }
 
+    function test_SetJurorActive_MaintainsActiveIndex() public {
+        assertEq(oracle.getActiveJurorTokenIds().length, 4); // setUp 激活了 1-4
+        vm.prank(jurorManager);
+        oracle.setJurorActive(2, false);
+        assertEq(oracle.getActiveJurorTokenIds().length, 3);
+        vm.prank(jurorManager);
+        oracle.setJurorActive(2, true);
+        assertEq(oracle.getActiveJurorTokenIds().length, 4);
+    }
+
+    function test_RevertIf_MaxActiveJurorsReached() public {
+        vm.prank(governor);
+        oracle.setMaxActiveJurors(4); // 已有 4 个 active
+
+        bytes32 metadataHash = bytes32(uint256(5));
+        uint256 nonce = oracle.jurorRegisterNonces(5);
+        uint256 deadline = block.timestamp + 1 days;
+        bytes memory sig = _signRegisterJuror(alice, 5, metadataHash, nonce, deadline);
+        vm.prank(alice);
+        oracle.registerJuror(5, metadataHash, nonce, deadline, sig);
+
+        vm.prank(jurorManager);
+        vm.expectRevert(abi.encodeWithSelector(EvoCommitteeOracle.MaxActiveJurorsReached.selector, 4));
+        oracle.setJurorActive(5, true);
+    }
+
     function test_RevertIf_RequestSelection_NonAutomationOperator() public {
         uint256 predictionId = 999;
         vm.expectRevert(

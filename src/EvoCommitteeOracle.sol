@@ -5,6 +5,7 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import {ECDSA} from "openzeppelin-contracts/contracts/utils/cryptography/ECDSA.sol";
+import {EnumerableSet} from "openzeppelin-contracts/contracts/utils/structs/EnumerableSet.sol";
 
 import {IAgentOwnership} from "./interfaces/IAgentOwnership.sol";
 import {IPredictionOracle} from "./interfaces/IPredictionOracle.sol";
@@ -13,6 +14,8 @@ import {IPredictionOracle} from "./interfaces/IPredictionOracle.sol";
 /// @notice Mainline decentralized committee oracle with juror pool, verifiable selection,
 ///         evidence-hash-bound proposals, pending finality, and challenge support.
 contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPredictionOracle, UUPSUpgradeable {
+    using EnumerableSet for EnumerableSet.UintSet;
+
     bytes32 public constant ADMIN_ROLE = DEFAULT_ADMIN_ROLE;
     bytes32 public constant GOVERNOR_ROLE = keccak256("GOVERNOR_ROLE");
     bytes32 public constant TIMELOCK_EXECUTOR_ROLE = keccak256("TIMELOCK_EXECUTOR_ROLE");
@@ -136,6 +139,10 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     mapping(uint256 => Challenge) private _challenges;
     mapping(uint256 => Result) private _results;
 
+    // --- v2 appended storage (UUPS append-only; do not reorder) ---
+    EnumerableSet.UintSet private _activeJurorTokenIds;
+    uint256 public maxActiveJurors; // 0 = uncapped
+
     event ProtocolConfigUpdated(
         uint16 primaryCount,
         uint16 reserveCount,
@@ -208,6 +215,7 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         address finalizer
     );
     event PredictionStalled(uint256 indexed predictionId, uint8 indexed previousStatus, uint256 markedAt);
+    event MaxActiveJurorsUpdated(uint256 maxActiveJurors);
     event PredictionResolvedByEmergency(
         uint256 indexed predictionId,
         bytes32 indexed proposalHash,
@@ -249,6 +257,7 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     error AlreadyChallenged(uint256 predictionId);
     error ChallengeNotFound(uint256 predictionId);
     error InsufficientChallengeBond(uint256 requiredBond, uint256 actualBond);
+    error MaxActiveJurorsReached(uint256 maxActiveJurors);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -292,6 +301,15 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     }
     function setProtocolConfig(ProtocolConfig calldata nextConfig) external onlyRole(GOVERNOR_ROLE) {
         _setProtocolConfig(nextConfig);
+    }
+
+    function setMaxActiveJurors(uint256 newMax) external onlyRole(GOVERNOR_ROLE) {
+        maxActiveJurors = newMax;
+        emit MaxActiveJurorsUpdated(newMax);
+    }
+
+    function getActiveJurorTokenIds() external view returns (uint256[] memory) {
+        return _activeJurorTokenIds.values();
     }
 
     function registerJuror(uint256 memberTokenId, bytes32 metadataHash, uint256 nonce, uint256 deadline, bytes calldata signature)
@@ -787,12 +805,12 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     }
 
     function _eligibleJurors() internal view returns (uint256[] memory out) {
-        out = new uint256[](_jurorTokenIds.length);
+        uint256 activeCount = _activeJurorTokenIds.length();
+        out = new uint256[](activeCount);
         uint256 count;
-        for (uint256 i = 0; i < _jurorTokenIds.length; i++) {
-            uint256 tokenId = _jurorTokenIds[i];
-            Juror storage juror = _jurors[tokenId];
-            if (juror.registered && juror.active && juror.cooldownUntil <= block.timestamp) {
+        for (uint256 i = 0; i < activeCount; i++) {
+            uint256 tokenId = _activeJurorTokenIds.at(i);
+            if (_jurors[tokenId].cooldownUntil <= block.timestamp) {
                 out[count] = tokenId;
                 count++;
             }
@@ -931,6 +949,14 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     function _setJurorActive(uint256 memberTokenId, bool active) internal {
         Juror storage juror = _getJurorStorage(memberTokenId);
         if (juror.active == active) return;
+        if (active) {
+            if (maxActiveJurors != 0 && _activeJurorTokenIds.length() >= maxActiveJurors) {
+                revert MaxActiveJurorsReached(maxActiveJurors);
+            }
+            _activeJurorTokenIds.add(memberTokenId);
+        } else {
+            _activeJurorTokenIds.remove(memberTokenId);
+        }
         juror.active = active;
         emit JurorActiveUpdated(memberTokenId, active);
     }
