@@ -36,6 +36,11 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     uint8 public constant RESOLUTION_VOID = 2;
     uint8 public constant RESOLUTION_INVALID = 3;
 
+    uint256 public constant MAX_COMMITTEE_MEMBERS = 128;
+    uint64 public constant MAX_WINDOW_DURATION = 30 days;
+    uint64 public constant MAX_SELECTION_DELAY_BLOCKS = 100_000;
+    uint16 public constant MAX_EPOCHS_LIMIT = 64;
+
     enum PredictionStatus {
         Unassigned,
         SelectionPending,
@@ -788,8 +793,13 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         if (
             nextConfig.primaryCount == 0 || nextConfig.quorum == 0
                 || nextConfig.quorum > nextConfig.primaryCount + nextConfig.reserveCount
-                || nextConfig.selectionDelayBlocks == 0 || nextConfig.voteWindow == 0 || nextConfig.challengeWindow == 0
-                || nextConfig.maxEpochs == 0
+                || uint256(nextConfig.quorum) * 2 <= nextConfig.primaryCount
+                || uint256(nextConfig.primaryCount) + uint256(nextConfig.reserveCount) > MAX_COMMITTEE_MEMBERS
+                || nextConfig.selectionDelayBlocks == 0 || nextConfig.selectionDelayBlocks > MAX_SELECTION_DELAY_BLOCKS
+                || nextConfig.voteWindow == 0 || nextConfig.voteWindow > MAX_WINDOW_DURATION
+                || nextConfig.graceWindow > MAX_WINDOW_DURATION
+                || nextConfig.challengeWindow == 0 || nextConfig.challengeWindow > MAX_WINDOW_DURATION
+                || nextConfig.maxEpochs == 0 || nextConfig.maxEpochs > MAX_EPOCHS_LIMIT
         ) {
             revert InvalidProtocolConfig();
         }

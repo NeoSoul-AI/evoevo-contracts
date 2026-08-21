@@ -691,6 +691,33 @@ contract EvoCommitteeOracleTest is Test {
         oracle.initializeV2();
     }
 
+    function test_RevertIf_SetProtocolConfig_QuorumBelowPrimaryMajority() public {
+        EvoCommitteeOracle.ProtocolConfig memory config = _defaultConfig();
+        config.primaryCount = 4;
+        config.quorum = 2; // 2*2 == 4，非严格多数
+        vm.prank(governor);
+        vm.expectRevert(EvoCommitteeOracle.InvalidProtocolConfig.selector);
+        oracle.setProtocolConfig(config);
+    }
+
+    function test_RevertIf_SetProtocolConfig_CommitteeTooLarge() public {
+        EvoCommitteeOracle.ProtocolConfig memory config = _defaultConfig();
+        config.primaryCount = 100;
+        config.reserveCount = 29; // 129 > 128
+        config.quorum = 51;
+        vm.prank(governor);
+        vm.expectRevert(EvoCommitteeOracle.InvalidProtocolConfig.selector);
+        oracle.setProtocolConfig(config);
+    }
+
+    function test_RevertIf_SetProtocolConfig_WindowTooLong() public {
+        EvoCommitteeOracle.ProtocolConfig memory config = _defaultConfig();
+        config.voteWindow = 31 days;
+        vm.prank(governor);
+        vm.expectRevert(EvoCommitteeOracle.InvalidProtocolConfig.selector);
+        oracle.setProtocolConfig(config);
+    }
+
     function _deployOracle() internal returns (EvoCommitteeOracle deployed) {
         EvoCommitteeOracle implementation = new EvoCommitteeOracle();
         bytes memory initData = abi.encodeCall(
