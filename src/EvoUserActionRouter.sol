@@ -5,7 +5,6 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-import {IERC8004IdentityRegistry} from "./interfaces/IERC8004IdentityRegistry.sol";
 import {EvoBindingRegistry} from "./EvoBindingRegistry.sol";
 import {EvoEvolutionRegistry} from "./EvoEvolutionRegistry.sol";
 import {EvoPredictionRegistry} from "./EvoPredictionRegistry.sol";
@@ -68,16 +67,6 @@ contract EvoUserActionRouter is PausableUpgradeable, AccessControlUpgradeable, U
             if (paused()) _unpause();
         }
         emit PauseUpdated(isPaused);
-    }
-
-    function registerAndBind(
-        address evoAccount,
-        bytes32 evoUserIdHash,
-        string calldata agentURI,
-        IERC8004IdentityRegistry.MetadataEntry[] calldata metadata
-    ) external whenNotPaused returns (uint256 agentId) {
-        if (address(bindingRegistry) == address(0)) revert BindingRegistryNotConfigured();
-        agentId = bindingRegistry.registerAndBindFor(_msgSender(), evoAccount, evoUserIdHash, agentURI, metadata);
     }
 
     function bindExistingAgent(uint256 agentId, address evoAccount, bytes32 evoUserIdHash) external whenNotPaused {

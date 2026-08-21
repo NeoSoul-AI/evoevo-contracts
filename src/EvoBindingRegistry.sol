@@ -5,7 +5,6 @@ import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/acce
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
-import {IERC8004IdentityRegistry} from "./interfaces/IERC8004IdentityRegistry.sol";
 import {IEvoBindingRegistryIdentity} from "./interfaces/IEvoBindingRegistryIdentity.sol";
 import {IAgentOwnership} from "./interfaces/IAgentOwnership.sol";
 
@@ -30,6 +29,8 @@ contract EvoBindingRegistry is Initializable, PausableUpgradeable, AccessControl
     //      state in `_bindings` is, by definition, data for this legacy registry.
     IEvoBindingRegistryIdentity public identityRegistry;
     address public trustedRouter;
+    /// @dev Deprecated since the self-hosted registration entry points were removed.
+    ///      Kept only as a storage placeholder (UUPS append-only layout) — do not remove or reorder.
     bool public selfHostedRegistrationEnabled;
 
     mapping(uint256 => BindingRecord) private _bindings;
@@ -45,7 +46,6 @@ contract EvoBindingRegistry is Initializable, PausableUpgradeable, AccessControl
     uint256[47] private __gap;
 
     event TrustedRouterUpdated(address indexed oldRouter, address indexed newRouter);
-    event SelfHostedRegistrationModeUpdated(bool enabled);
     event PauseUpdated(bool paused);
     event IdentityRegistrySupportUpdated(address indexed identityRegistry, bool supported);
     // @dev Legacy events. Retained for historical-log ABI decoding; no longer emitted (V2 events replace them).
@@ -78,7 +78,6 @@ contract EvoBindingRegistry is Initializable, PausableUpgradeable, AccessControl
     error ZeroAddress();
     error Unauthorized();
     error InvalidRouter(address router);
-    error SelfHostedRegistrationDisabled();
     error UnsupportedIdentityRegistry(address identityRegistry);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -93,7 +92,6 @@ contract EvoBindingRegistry is Initializable, PausableUpgradeable, AccessControl
         __AccessControl_init();
 
         identityRegistry = IEvoBindingRegistryIdentity(identityRegistry_);
-        selfHostedRegistrationEnabled = false;
         _grantRole(ADMIN_ROLE, _msgSender());
         _grantRole(PAUSER_ROLE, _msgSender());
     }
@@ -140,12 +138,6 @@ contract EvoBindingRegistry is Initializable, PausableUpgradeable, AccessControl
         trustedRouter = newRouter;
     }
 
-    function setSelfHostedRegistrationEnabled(bool enabled) external onlyRole(ADMIN_ROLE) {
-        if (enabled) revert SelfHostedRegistrationDisabled();
-        selfHostedRegistrationEnabled = false;
-        emit SelfHostedRegistrationModeUpdated(false);
-    }
-
     function setPaused(bool isPaused) external onlyRole(PAUSER_ROLE) {
         if (isPaused) {
             if (!paused()) _pause();
@@ -153,30 +145,6 @@ contract EvoBindingRegistry is Initializable, PausableUpgradeable, AccessControl
             if (paused()) _unpause();
         }
         emit PauseUpdated(isPaused);
-    }
-
-    function registerAndBind(
-        address evoAccount,
-        bytes32 evoUserIdHash,
-        string calldata agentURI,
-        IERC8004IdentityRegistry.MetadataEntry[] calldata metadata
-    ) external whenNotPaused returns (uint256 agentId) {
-        if (!selfHostedRegistrationEnabled) revert SelfHostedRegistrationDisabled();
-        agentId = identityRegistry.registerForByBindingRegistry(_msgSender(), agentURI, metadata);
-        _bindV2(address(identityRegistry), agentId, _msgSender(), evoAccount, evoUserIdHash, _msgSender());
-    }
-
-    function registerAndBindFor(
-        address actor,
-        address evoAccount,
-        bytes32 evoUserIdHash,
-        string calldata agentURI,
-        IERC8004IdentityRegistry.MetadataEntry[] calldata metadata
-    ) external whenNotPaused returns (uint256 agentId) {
-        if (_msgSender() != trustedRouter) revert Unauthorized();
-        if (!selfHostedRegistrationEnabled) revert SelfHostedRegistrationDisabled();
-        agentId = identityRegistry.registerForByBindingRegistry(actor, agentURI, metadata);
-        _bindV2(address(identityRegistry), agentId, actor, evoAccount, evoUserIdHash, actor);
     }
 
     // --- Legacy single-registry entrypoints (delegate to the legacy identity registry) ---

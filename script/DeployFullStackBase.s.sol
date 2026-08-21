@@ -298,7 +298,6 @@ abstract contract DeployFullStackBase is Script {
             deployed.evolutionRegistryImplementation = address(evolutionRegistryImplementation_);
             deployed.evolutionRegistry = address(evolutionRegistry_);
         }
-        EvoBindingRegistry(deployed.binding).setSelfHostedRegistrationEnabled(false);
         {
             EvoCommitteeOracle committeeImplementation_ = new EvoCommitteeOracle();
             EvoCommitteeOracle committee_ = EvoCommitteeOracle(

@@ -62,12 +62,6 @@ contract EvoBindingRegistryTest is Test {
         vm.stopPrank();
     }
 
-    function test_RevertIf_RegisterAndBind_LegacySelfHostedPathDisabled() public {
-        vm.prank(alice);
-        vm.expectRevert(EvoBindingRegistry.SelfHostedRegistrationDisabled.selector);
-        bindingRegistry.registerAndBind(address(0), USER_HASH_1, URI_1, _emptyMetadata());
-    }
-
     function test_BindExistingAgent_HappyPath() public {
         vm.prank(alice);
         uint256 agentId = nft.register(URI_1);
@@ -201,30 +195,12 @@ contract EvoBindingRegistryTest is Test {
         nft.registerForByBindingRegistry(alice, URI_1, _emptyMetadata());
     }
 
-    function test_RevertIf_AdminCannotEnableSelfHostedRegistrationMode() public {
-        vm.prank(admin);
-        vm.expectRevert(EvoBindingRegistry.SelfHostedRegistrationDisabled.selector);
-        bindingRegistry.setSelfHostedRegistrationEnabled(true);
-    }
-
-    function test_RevertIf_RegisterAndBind_WhenSelfHostedRegistrationDisabled() public {
-        vm.prank(alice);
-        vm.expectRevert(EvoBindingRegistry.SelfHostedRegistrationDisabled.selector);
-        bindingRegistry.registerAndBind(address(0), USER_HASH_1, URI_1, _emptyMetadata());
-    }
-
-    function test_DefaultSelfHostedRegistrationMode_IsDisabled() public {
+    function test_DeprecatedRegistrationFlagDefaultsFalse() public {
         vm.startPrank(admin);
         EvoBindingRegistry freshBinding = _deployBindingRegistry(address(nft));
         vm.stopPrank();
 
         assertFalse(freshBinding.selfHostedRegistrationEnabled());
-    }
-
-    function test_RevertIf_UnauthorizedRegisterAndBindFor() public {
-        vm.prank(alice);
-        vm.expectRevert(EvoBindingRegistry.Unauthorized.selector);
-        bindingRegistry.registerAndBindFor(alice, address(0), USER_HASH_1, URI_1, _emptyMetadata());
     }
 
     function test_RevertIf_UnauthorizedBindExistingAgentFor() public {

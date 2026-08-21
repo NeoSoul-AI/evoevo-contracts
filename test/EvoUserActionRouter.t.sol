@@ -106,12 +106,6 @@ contract EvoUserActionRouterTest is Test {
         vm.stopPrank();
     }
 
-    function test_RevertIf_RegisterAndBind_LegacySelfHostedPathDisabled() public {
-        vm.prank(alice);
-        vm.expectRevert(EvoBindingRegistry.SelfHostedRegistrationDisabled.selector);
-        router.registerAndBind(address(0), bytes32(uint256(101)), URI_1, _emptyMetadata());
-    }
-
     function test_BindExistingAgent_RoutedActorPreserved() public {
         vm.prank(alice);
         uint256 agentId = nft.register(URI_1);
@@ -213,15 +207,6 @@ contract EvoUserActionRouterTest is Test {
         router.judge(predictionId, 1, true, 101);
     }
 
-    function test_RevertIf_BindingRouterTrustMissing() public {
-        vm.prank(admin);
-        bindingRegistry.setTrustedRouter(address(0));
-
-        vm.prank(alice);
-        vm.expectRevert(EvoBindingRegistry.Unauthorized.selector);
-        router.registerAndBind(address(0), bytes32(uint256(101)), URI_1, _emptyMetadata());
-    }
-
     function test_RevertIf_BindExistingAgent_BindingRouterTrustMissing() public {
         vm.prank(alice);
         uint256 agentId = nft.register(URI_1);
@@ -234,21 +219,18 @@ contract EvoUserActionRouterTest is Test {
         router.bindExistingAgent(agentId, bob, bytes32(uint256(202)));
     }
 
-    function test_RevertIf_RegisterAndBind_SelfHostedRegistrationDisabled() public {
-        vm.prank(alice);
-        vm.expectRevert(EvoBindingRegistry.SelfHostedRegistrationDisabled.selector);
-        router.registerAndBind(address(0), bytes32(uint256(101)), URI_1, _emptyMetadata());
-    }
-
-    function test_RevertIf_RegisterAndBind_BindingRegistryNotConfigured() public {
+    function test_RevertIf_BindExistingAgent_BindingRegistryNotConfigured() public {
         EvoUserActionRouter unconfiguredRouter;
         vm.startPrank(admin);
         unconfiguredRouter = _deployRouter(address(evolutionRegistry), address(ownerJudgementRegistry));
         vm.stopPrank();
 
         vm.prank(alice);
+        uint256 agentId = nft.register(URI_1);
+
+        vm.prank(alice);
         vm.expectRevert(EvoUserActionRouter.BindingRegistryNotConfigured.selector);
-        unconfiguredRouter.registerAndBind(address(0), bytes32(uint256(101)), URI_1, _emptyMetadata());
+        unconfiguredRouter.bindExistingAgent(agentId, bob, bytes32(uint256(202)));
     }
 
     function _registerAndBindViaRouter(address actor, string memory uri) internal returns (uint256) {
