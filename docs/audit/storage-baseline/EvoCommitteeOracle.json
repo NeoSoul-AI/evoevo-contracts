@@ -1,0 +1,761 @@
+{
+  "storage": [
+    {
+      "astId": 9054,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "nft",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(IAgentOwnership)12443"
+    },
+    {
+      "astId": 9057,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "protocolConfig",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_struct(ProtocolConfig)8951_storage"
+    },
+    {
+      "astId": 9061,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "jurorRegisterNonces",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_mapping(t_uint256,t_uint256)"
+    },
+    {
+      "astId": 9065,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "jurorActivationNonces",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_mapping(t_uint256,t_uint256)"
+    },
+    {
+      "astId": 9068,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "_jurorTokenIds",
+      "offset": 0,
+      "slot": "7",
+      "type": "t_array(t_uint256)dyn_storage"
+    },
+    {
+      "astId": 9073,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "_jurors",
+      "offset": 0,
+      "slot": "8",
+      "type": "t_mapping(t_uint256,t_struct(Juror)8964_storage)"
+    },
+    {
+      "astId": 9078,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "_predictionAssignments",
+      "offset": 0,
+      "slot": "9",
+      "type": "t_mapping(t_uint256,t_struct(PredictionAssignment)8994_storage)"
+    },
+    {
+      "astId": 9083,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "_predictionPrimaryMembers",
+      "offset": 0,
+      "slot": "10",
+      "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)"
+    },
+    {
+      "astId": 9088,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "_predictionReserveMembers",
+      "offset": 0,
+      "slot": "11",
+      "type": "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)"
+    },
+    {
+      "astId": 9094,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "_isPredictionPrimaryMember",
+      "offset": 0,
+      "slot": "12",
+      "type": "t_mapping(t_uint256,t_mapping(t_uint256,t_bool))"
+    },
+    {
+      "astId": 9100,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "_isPredictionReserveMember",
+      "offset": 0,
+      "slot": "13",
+      "type": "t_mapping(t_uint256,t_mapping(t_uint256,t_bool))"
+    },
+    {
+      "astId": 9106,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "_memberSubmissionHashes",
+      "offset": 0,
+      "slot": "14",
+      "type": "t_mapping(t_uint256,t_mapping(t_uint256,t_bytes32))"
+    },
+    {
+      "astId": 9113,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "_proposalTallies",
+      "offset": 0,
+      "slot": "15",
+      "type": "t_mapping(t_uint256,t_mapping(t_bytes32,t_struct(ProposalTally)9012_storage))"
+    },
+    {
+      "astId": 9118,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "_challenges",
+      "offset": 0,
+      "slot": "16",
+      "type": "t_mapping(t_uint256,t_struct(Challenge)9025_storage)"
+    },
+    {
+      "astId": 9123,
+      "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+      "label": "_results",
+      "offset": 0,
+      "slot": "17",
+      "type": "t_mapping(t_uint256,t_struct(Result)9051_storage)"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_uint256)dyn_storage": {
+      "encoding": "dynamic_array",
+      "label": "uint256[]",
+      "numberOfBytes": "32",
+      "base": "t_uint256"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_contract(IAgentOwnership)12443": {
+      "encoding": "inplace",
+      "label": "contract IAgentOwnership",
+      "numberOfBytes": "20"
+    },
+    "t_enum(PredictionStatus)8930": {
+      "encoding": "inplace",
+      "label": "enum EvoCommitteeOracle.PredictionStatus",
+      "numberOfBytes": "1"
+    },
+    "t_int64": {
+      "encoding": "inplace",
+      "label": "int64",
+      "numberOfBytes": "8"
+    },
+    "t_mapping(t_bytes32,t_struct(ProposalTally)9012_storage)": {
+      "encoding": "mapping",
+      "key": "t_bytes32",
+      "label": "mapping(bytes32 => struct EvoCommitteeOracle.ProposalTally)",
+      "numberOfBytes": "32",
+      "value": "t_struct(ProposalTally)9012_storage"
+    },
+    "t_mapping(t_uint256,t_array(t_uint256)dyn_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint256[])",
+      "numberOfBytes": "32",
+      "value": "t_array(t_uint256)dyn_storage"
+    },
+    "t_mapping(t_uint256,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_uint256,t_bytes32)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => bytes32)",
+      "numberOfBytes": "32",
+      "value": "t_bytes32"
+    },
+    "t_mapping(t_uint256,t_mapping(t_bytes32,t_struct(ProposalTally)9012_storage))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(bytes32 => struct EvoCommitteeOracle.ProposalTally))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_bytes32,t_struct(ProposalTally)9012_storage)"
+    },
+    "t_mapping(t_uint256,t_mapping(t_uint256,t_bool))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(uint256 => bool))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_bool)"
+    },
+    "t_mapping(t_uint256,t_mapping(t_uint256,t_bytes32))": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => mapping(uint256 => bytes32))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_bytes32)"
+    },
+    "t_mapping(t_uint256,t_struct(Challenge)9025_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct EvoCommitteeOracle.Challenge)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Challenge)9025_storage"
+    },
+    "t_mapping(t_uint256,t_struct(Juror)8964_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct EvoCommitteeOracle.Juror)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Juror)8964_storage"
+    },
+    "t_mapping(t_uint256,t_struct(PredictionAssignment)8994_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct EvoCommitteeOracle.PredictionAssignment)",
+      "numberOfBytes": "32",
+      "value": "t_struct(PredictionAssignment)8994_storage"
+    },
+    "t_mapping(t_uint256,t_struct(Result)9051_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct EvoCommitteeOracle.Result)",
+      "numberOfBytes": "32",
+      "value": "t_struct(Result)9051_storage"
+    },
+    "t_mapping(t_uint256,t_uint256)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => uint256)",
+      "numberOfBytes": "32",
+      "value": "t_uint256"
+    },
+    "t_struct(Challenge)9025_storage": {
+      "encoding": "inplace",
+      "label": "struct EvoCommitteeOracle.Challenge",
+      "numberOfBytes": "128",
+      "members": [
+        {
+          "astId": 9014,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "exists",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bool"
+        },
+        {
+          "astId": 9016,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "challenger",
+          "offset": 1,
+          "slot": "0",
+          "type": "t_address"
+        },
+        {
+          "astId": 9018,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "evidenceBundleHash",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 9020,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "reasonCode",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 9022,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "bondAmount",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint96"
+        },
+        {
+          "astId": 9024,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "openedAt",
+          "offset": 12,
+          "slot": "3",
+          "type": "t_uint64"
+        }
+      ]
+    },
+    "t_struct(Juror)8964_storage": {
+      "encoding": "inplace",
+      "label": "struct EvoCommitteeOracle.Juror",
+      "numberOfBytes": "64",
+      "members": [
+        {
+          "astId": 8953,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "registered",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bool"
+        },
+        {
+          "astId": 8955,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "active",
+          "offset": 1,
+          "slot": "0",
+          "type": "t_bool"
+        },
+        {
+          "astId": 8957,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "registeredAt",
+          "offset": 2,
+          "slot": "0",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8959,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "cooldownUntil",
+          "offset": 10,
+          "slot": "0",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8961,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "reputationScore",
+          "offset": 18,
+          "slot": "0",
+          "type": "t_int64"
+        },
+        {
+          "astId": 8963,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "metadataHash",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_bytes32"
+        }
+      ]
+    },
+    "t_struct(PredictionAssignment)8994_storage": {
+      "encoding": "inplace",
+      "label": "struct EvoCommitteeOracle.PredictionAssignment",
+      "numberOfBytes": "192",
+      "members": [
+        {
+          "astId": 8967,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "status",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_enum(PredictionStatus)8930"
+        },
+        {
+          "astId": 8969,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "selectionRequestedBlock",
+          "offset": 1,
+          "slot": "0",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8971,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "selectionTargetBlock",
+          "offset": 9,
+          "slot": "0",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8973,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "selectionSeed",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 8975,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "quorum",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 8977,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "assignedAt",
+          "offset": 2,
+          "slot": "2",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8979,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "voteWindow",
+          "offset": 10,
+          "slot": "2",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8981,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "graceWindow",
+          "offset": 18,
+          "slot": "2",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8983,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "challengeWindow",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8985,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "pendingProposalHash",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 8987,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "pendingOpenedAt",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8989,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "challengeDeadline",
+          "offset": 8,
+          "slot": "5",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8991,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "currentEpoch",
+          "offset": 16,
+          "slot": "5",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 8993,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "epochStartedAt",
+          "offset": 18,
+          "slot": "5",
+          "type": "t_uint64"
+        }
+      ]
+    },
+    "t_struct(ProposalTally)9012_storage": {
+      "encoding": "inplace",
+      "label": "struct EvoCommitteeOracle.ProposalTally",
+      "numberOfBytes": "160",
+      "members": [
+        {
+          "astId": 8996,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "exists",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bool"
+        },
+        {
+          "astId": 8998,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "resolutionKind",
+          "offset": 1,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 9000,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "winningOptionIndex",
+          "offset": 2,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 9002,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "approvalCount",
+          "offset": 3,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 9004,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "yesVotes",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9006,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "noVotes",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9009,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "optionVotes",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_array(t_uint256)dyn_storage"
+        },
+        {
+          "astId": 9011,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "evidenceBundleHash",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_bytes32"
+        }
+      ]
+    },
+    "t_struct(ProtocolConfig)8951_storage": {
+      "encoding": "inplace",
+      "label": "struct EvoCommitteeOracle.ProtocolConfig",
+      "numberOfBytes": "128",
+      "members": [
+        {
+          "astId": 8932,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "primaryCount",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 8934,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "reserveCount",
+          "offset": 2,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 8936,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "quorum",
+          "offset": 4,
+          "slot": "0",
+          "type": "t_uint16"
+        },
+        {
+          "astId": 8938,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "selectionDelayBlocks",
+          "offset": 6,
+          "slot": "0",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8940,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "voteWindow",
+          "offset": 14,
+          "slot": "0",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8942,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "graceWindow",
+          "offset": 22,
+          "slot": "0",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8944,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "challengeWindow",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 8946,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "challengeBond",
+          "offset": 8,
+          "slot": "1",
+          "type": "t_uint96"
+        },
+        {
+          "astId": 8948,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "policyHash",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 8950,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "maxEpochs",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint16"
+        }
+      ]
+    },
+    "t_struct(Result)9051_storage": {
+      "encoding": "inplace",
+      "label": "struct EvoCommitteeOracle.Result",
+      "numberOfBytes": "256",
+      "members": [
+        {
+          "astId": 9027,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "resolved",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_bool"
+        },
+        {
+          "astId": 9029,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "emergency",
+          "offset": 1,
+          "slot": "0",
+          "type": "t_bool"
+        },
+        {
+          "astId": 9031,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "resolutionKind",
+          "offset": 2,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 9033,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "winningOptionIndex",
+          "offset": 3,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 9035,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "outcome",
+          "offset": 4,
+          "slot": "0",
+          "type": "t_uint8"
+        },
+        {
+          "astId": 9037,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "yesVotes",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9039,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "noVotes",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9042,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "optionVotes",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_array(t_uint256)dyn_storage"
+        },
+        {
+          "astId": 9044,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "finalizedAt",
+          "offset": 0,
+          "slot": "4",
+          "type": "t_uint256"
+        },
+        {
+          "astId": 9046,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "finalizer",
+          "offset": 0,
+          "slot": "5",
+          "type": "t_address"
+        },
+        {
+          "astId": 9048,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "proposalHash",
+          "offset": 0,
+          "slot": "6",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 9050,
+          "contract": "src/EvoCommitteeOracle.sol:EvoCommitteeOracle",
+          "label": "evidenceBundleHash",
+          "offset": 0,
+          "slot": "7",
+          "type": "t_bytes32"
+        }
+      ]
+    },
+    "t_uint16": {
+      "encoding": "inplace",
+      "label": "uint16",
+      "numberOfBytes": "2"
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint64": {
+      "encoding": "inplace",
+      "label": "uint64",
+      "numberOfBytes": "8"
+    },
+    "t_uint8": {
+      "encoding": "inplace",
+      "label": "uint8",
+      "numberOfBytes": "1"
+    },
+    "t_uint96": {
+      "encoding": "inplace",
+      "label": "uint96",
+      "numberOfBytes": "12"
+    }
+  }
+}

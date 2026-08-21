@@ -1,0 +1,182 @@
+{
+  "storage": [
+    {
+      "astId": 2220,
+      "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+      "label": "identityRegistry",
+      "offset": 0,
+      "slot": "0",
+      "type": "t_contract(IEvoBindingRegistryIdentity)3572"
+    },
+    {
+      "astId": 2222,
+      "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+      "label": "trustedRouter",
+      "offset": 0,
+      "slot": "1",
+      "type": "t_address"
+    },
+    {
+      "astId": 2224,
+      "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+      "label": "selfHostedRegistrationEnabled",
+      "offset": 20,
+      "slot": "1",
+      "type": "t_bool"
+    },
+    {
+      "astId": 2229,
+      "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+      "label": "_bindings",
+      "offset": 0,
+      "slot": "2",
+      "type": "t_mapping(t_uint256,t_struct(BindingRecord)2209_storage)"
+    },
+    {
+      "astId": 2231,
+      "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+      "label": "publicIdentityRegistry",
+      "offset": 0,
+      "slot": "3",
+      "type": "t_address"
+    },
+    {
+      "astId": 2235,
+      "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+      "label": "supportedIdentityRegistries",
+      "offset": 0,
+      "slot": "4",
+      "type": "t_mapping(t_address,t_bool)"
+    },
+    {
+      "astId": 2242,
+      "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+      "label": "_bindingsByRegistry",
+      "offset": 0,
+      "slot": "5",
+      "type": "t_mapping(t_address,t_mapping(t_uint256,t_struct(BindingRecord)2209_storage))"
+    },
+    {
+      "astId": 2246,
+      "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+      "label": "__gap",
+      "offset": 0,
+      "slot": "6",
+      "type": "t_array(t_uint256)47_storage"
+    }
+  ],
+  "types": {
+    "t_address": {
+      "encoding": "inplace",
+      "label": "address",
+      "numberOfBytes": "20"
+    },
+    "t_array(t_uint256)47_storage": {
+      "encoding": "inplace",
+      "label": "uint256[47]",
+      "numberOfBytes": "1504",
+      "base": "t_uint256"
+    },
+    "t_bool": {
+      "encoding": "inplace",
+      "label": "bool",
+      "numberOfBytes": "1"
+    },
+    "t_bytes32": {
+      "encoding": "inplace",
+      "label": "bytes32",
+      "numberOfBytes": "32"
+    },
+    "t_contract(IEvoBindingRegistryIdentity)3572": {
+      "encoding": "inplace",
+      "label": "contract IEvoBindingRegistryIdentity",
+      "numberOfBytes": "20"
+    },
+    "t_mapping(t_address,t_bool)": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => bool)",
+      "numberOfBytes": "32",
+      "value": "t_bool"
+    },
+    "t_mapping(t_address,t_mapping(t_uint256,t_struct(BindingRecord)2209_storage))": {
+      "encoding": "mapping",
+      "key": "t_address",
+      "label": "mapping(address => mapping(uint256 => struct EvoBindingRegistry.BindingRecord))",
+      "numberOfBytes": "32",
+      "value": "t_mapping(t_uint256,t_struct(BindingRecord)2209_storage)"
+    },
+    "t_mapping(t_uint256,t_struct(BindingRecord)2209_storage)": {
+      "encoding": "mapping",
+      "key": "t_uint256",
+      "label": "mapping(uint256 => struct EvoBindingRegistry.BindingRecord)",
+      "numberOfBytes": "32",
+      "value": "t_struct(BindingRecord)2209_storage"
+    },
+    "t_struct(BindingRecord)2209_storage": {
+      "encoding": "inplace",
+      "label": "struct EvoBindingRegistry.BindingRecord",
+      "numberOfBytes": "128",
+      "members": [
+        {
+          "astId": 2198,
+          "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+          "label": "boundOwner",
+          "offset": 0,
+          "slot": "0",
+          "type": "t_address"
+        },
+        {
+          "astId": 2200,
+          "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+          "label": "evoAccount",
+          "offset": 0,
+          "slot": "1",
+          "type": "t_address"
+        },
+        {
+          "astId": 2202,
+          "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+          "label": "evoUserIdHash",
+          "offset": 0,
+          "slot": "2",
+          "type": "t_bytes32"
+        },
+        {
+          "astId": 2204,
+          "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+          "label": "boundAt",
+          "offset": 0,
+          "slot": "3",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 2206,
+          "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+          "label": "updatedAt",
+          "offset": 8,
+          "slot": "3",
+          "type": "t_uint64"
+        },
+        {
+          "astId": 2208,
+          "contract": "src/EvoBindingRegistry.sol:EvoBindingRegistry",
+          "label": "active",
+          "offset": 16,
+          "slot": "3",
+          "type": "t_bool"
+        }
+      ]
+    },
+    "t_uint256": {
+      "encoding": "inplace",
+      "label": "uint256",
+      "numberOfBytes": "32"
+    },
+    "t_uint64": {
+      "encoding": "inplace",
+      "label": "uint64",
+      "numberOfBytes": "8"
+    }
+  }
+}
