@@ -290,6 +290,49 @@ contract EvoCommitteeOracleTest is Test {
         );
     }
 
+    function test_SubmitJurorResolution_SameOutcomeDifferentEvidenceAggregates() public {
+        uint256 predictionId = 1;
+        _finalizeSelection(predictionId);
+        uint256[] memory primary = oracle.getPrimaryMembers(predictionId);
+        uint8 kind = oracle.RESOLUTION_RESOLVED();
+
+        vm.prank(_ownerOfToken(primary[0]));
+        oracle.submitJurorResolution(predictionId, primary[0], kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
+        assertEq(uint8(oracle.getPredictionStatus(predictionId)), uint8(EvoCommitteeOracle.PredictionStatus.Voting));
+
+        // 同一获胜选项、不同 optionVotes、不同 evidence —— 修复前会分裂进不同桶、凑不齐 quorum
+        vm.prank(_ownerOfToken(primary[1]));
+        oracle.submitJurorResolution(predictionId, primary[1], kind, 1, _twoOptionVotes(1, 1), bytes32("evidence-b"));
+
+        assertEq(
+            uint8(oracle.getPredictionStatus(predictionId)),
+            uint8(EvoCommitteeOracle.PredictionStatus.PendingFinality)
+        );
+        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 1), 2);
+
+        // canonical = 第一份提案
+        EvoCommitteeOracle.PredictionAssignment memory a = oracle.getPredictionAssignment(predictionId);
+        bytes32 expected =
+            oracle.hashCommitteeResolution(predictionId, kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
+        assertEq(a.pendingProposalHash, expected);
+    }
+
+    function test_SubmitJurorResolution_DifferentOutcomesDoNotAggregate() public {
+        uint256 predictionId = 1;
+        _finalizeSelection(predictionId);
+        uint256[] memory primary = oracle.getPrimaryMembers(predictionId);
+        uint8 kind = oracle.RESOLUTION_RESOLVED();
+
+        vm.prank(_ownerOfToken(primary[0]));
+        oracle.submitJurorResolution(predictionId, primary[0], kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
+        vm.prank(_ownerOfToken(primary[1]));
+        oracle.submitJurorResolution(predictionId, primary[1], kind, 2, _twoOptionVotes(0, 2), bytes32("evidence-b"));
+
+        assertEq(uint8(oracle.getPredictionStatus(predictionId)), uint8(EvoCommitteeOracle.PredictionStatus.Voting));
+        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 1), 1);
+        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 2), 1);
+    }
+
     function test_RetrySelectionAfterEntropyExpires_ThenFinalize() public {
         uint256 predictionId = 1004;
 
