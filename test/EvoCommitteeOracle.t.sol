@@ -308,7 +308,7 @@ contract EvoCommitteeOracleTest is Test {
             uint8(oracle.getPredictionStatus(predictionId)),
             uint8(EvoCommitteeOracle.PredictionStatus.PendingFinality)
         );
-        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 1), 2);
+        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 1, 2), 2);
 
         // canonical = 第一份提案
         EvoCommitteeOracle.PredictionAssignment memory a = oracle.getPredictionAssignment(predictionId);
@@ -329,8 +329,51 @@ contract EvoCommitteeOracleTest is Test {
         oracle.submitJurorResolution(predictionId, primary[1], kind, 2, _twoOptionVotes(0, 2), bytes32("evidence-b"));
 
         assertEq(uint8(oracle.getPredictionStatus(predictionId)), uint8(EvoCommitteeOracle.PredictionStatus.Voting));
-        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 1), 1);
-        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 2), 1);
+        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 1, 2), 1);
+        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 2, 2), 1);
+    }
+
+    function test_SubmitJurorResolution_DifferentOptionCountDoesNotAggregate() public {
+        uint256 predictionId = 1;
+        _finalizeSelection(predictionId);
+        uint256[] memory primary = oracle.getPrimaryMembers(predictionId);
+        uint8 kind = oracle.RESOLUTION_RESOLVED();
+
+        // 恶意首提交：同一获胜选项但 3 元素票数组（会使 _legacyOutcome 判 INVALID）
+        uint256[] memory threeOptions = new uint256[](3);
+        threeOptions[2] = 1;
+        vm.prank(_ownerOfToken(primary[0]));
+        oracle.submitJurorResolution(predictionId, primary[0], kind, 1, threeOptions, bytes32("evil-evidence"));
+
+        // 诚实提交：2 元素票数组
+        vm.prank(_ownerOfToken(primary[1]));
+        oracle.submitJurorResolution(predictionId, primary[1], kind, 1, _twoOptionVotes(2, 0), bytes32("honest-evidence"));
+
+        // 不同 optionCount 不得聚合成 quorum
+        assertEq(uint8(oracle.getPredictionStatus(predictionId)), uint8(EvoCommitteeOracle.PredictionStatus.Voting));
+        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 1, 3), 1);
+        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 1, 2), 1);
+    }
+
+    function test_PendingFinalityOpened_UsesCanonicalEvidence() public {
+        uint256 predictionId = 1;
+        _finalizeSelection(predictionId);
+        uint256[] memory primary = oracle.getPrimaryMembers(predictionId);
+        uint8 kind = oracle.RESOLUTION_RESOLVED();
+
+        vm.prank(_ownerOfToken(primary[0]));
+        oracle.submitJurorResolution(predictionId, primary[0], kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
+
+        bytes32 canonicalHash =
+            oracle.hashCommitteeResolution(predictionId, kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
+        EvoCommitteeOracle.PredictionAssignment memory a = oracle.getPredictionAssignment(predictionId);
+        uint64 expectedDeadline = uint64(block.timestamp + a.challengeWindow);
+
+        vm.expectEmit(true, true, true, true, address(oracle));
+        emit EvoCommitteeOracle.PendingFinalityOpened(predictionId, canonicalHash, bytes32("evidence-a"), expectedDeadline);
+
+        vm.prank(_ownerOfToken(primary[1]));
+        oracle.submitJurorResolution(predictionId, primary[1], kind, 1, _twoOptionVotes(1, 1), bytes32("evidence-b"));
     }
 
     function test_RetrySelectionAfterEntropyExpires_ThenFinalize() public {

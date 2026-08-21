@@ -621,6 +621,11 @@
         "name": "winningOptionIndex",
         "type": "uint8",
         "internalType": "uint8"
+      },
+      {
+        "name": "optionCount",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [

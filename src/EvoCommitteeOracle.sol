@@ -540,7 +540,7 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         }
         tally.approvalCount += 1;
 
-        bytes32 outcomeKey = _outcomeKey(predictionId, resolutionKind, winningOptionIndex);
+        bytes32 outcomeKey = _outcomeKey(predictionId, resolutionKind, winningOptionIndex, optionVotes.length);
         if (_outcomeCanonicalProposal[predictionId][outcomeKey] == bytes32(0)) {
             _outcomeCanonicalProposal[predictionId][outcomeKey] = proposalHash;
         }
@@ -725,12 +725,12 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         return _proposalTallies[predictionId][proposalHash].approvalCount;
     }
 
-    function getOutcomeApprovalCount(uint256 predictionId, uint8 resolutionKind, uint8 winningOptionIndex)
+    function getOutcomeApprovalCount(uint256 predictionId, uint8 resolutionKind, uint8 winningOptionIndex, uint256 optionCount)
         external
         view
         returns (uint16)
     {
-        return _outcomeApprovalCounts[predictionId][_outcomeKey(predictionId, resolutionKind, winningOptionIndex)];
+        return _outcomeApprovalCounts[predictionId][_outcomeKey(predictionId, resolutionKind, winningOptionIndex, optionCount)];
     }
 
     function getChallenge(uint256 predictionId) external view returns (Challenge memory) {
@@ -984,12 +984,12 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         return optionVotes.length > 1 ? optionVotes[1] : 0;
     }
 
-    function _outcomeKey(uint256 predictionId, uint8 resolutionKind, uint8 winningOptionIndex)
+    function _outcomeKey(uint256 predictionId, uint8 resolutionKind, uint8 winningOptionIndex, uint256 optionCount)
         internal
         pure
         returns (bytes32)
     {
-        return keccak256(abi.encode(predictionId, resolutionKind, winningOptionIndex));
+        return keccak256(abi.encode(predictionId, resolutionKind, winningOptionIndex, optionCount));
     }
 
     function _consumeRegisterJurorApproval(
