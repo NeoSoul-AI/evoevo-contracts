@@ -314,18 +314,6 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         emit JurorRegistered(memberTokenId, owner, metadataHash);
     }
 
-    function activateJuror(uint256 memberTokenId) external onlyRole(JUROR_MANAGER_ROLE) {
-        _setJurorActive(memberTokenId, true);
-    }
-
-    function activateJurorWithSig(uint256 memberTokenId, uint256 nonce, uint256 deadline, bytes calldata signature)
-        external
-    {
-        address owner = _assertStrictPredictionTokenOwner(msg.sender, memberTokenId);
-        _consumeSetJurorActiveApproval(owner, memberTokenId, true, nonce, deadline, signature);
-        _setJurorActive(memberTokenId, true);
-    }
-
     function setJurorActive(uint256 memberTokenId, bool active) external onlyRole(JUROR_MANAGER_ROLE) {
         _setJurorActive(memberTokenId, active);
     }
@@ -942,6 +930,7 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
 
     function _setJurorActive(uint256 memberTokenId, bool active) internal {
         Juror storage juror = _getJurorStorage(memberTokenId);
+        if (juror.active == active) return;
         juror.active = active;
         emit JurorActiveUpdated(memberTokenId, active);
     }

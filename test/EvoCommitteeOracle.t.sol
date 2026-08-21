@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Test} from "forge-std/Test.sol";
+import {Test, Vm} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IAccessControl} from "openzeppelin-contracts/contracts/access/IAccessControl.sol";
 import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
@@ -181,6 +181,15 @@ contract EvoCommitteeOracleTest is Test {
         EvoCommitteeOracle.Juror memory juror = oracle.getJuror(1);
         assertTrue(juror.active);
         assertEq(oracle.jurorActivationNonces(1), nonce + 1);
+    }
+
+    function test_SetJurorActive_RepeatedCallSkipsWriteAndEvent() public {
+        // tokenId 1 已在 setUp 中激活
+        vm.recordLogs();
+        vm.prank(jurorManager);
+        oracle.setJurorActive(1, true);
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+        assertEq(logs.length, 0, "no-op activation must not emit");
     }
 
     function test_RevertIf_SetJurorActive_NonManager() public {
@@ -564,7 +573,7 @@ contract EvoCommitteeOracleTest is Test {
         oracle.registerJuror(tokenId, metadataHash, nonce, deadline, signature);
 
         vm.prank(jurorManager);
-        oracle.activateJuror(tokenId);
+        oracle.setJurorActive(tokenId, true);
     }
 
     function _signRegisterJuror(address owner, uint256 tokenId, bytes32 metadataHash, uint256 nonce, uint256 deadline)
