@@ -428,52 +428,6 @@
   },
   {
     "type": "function",
-    "name": "registerAndBind",
-    "inputs": [
-      {
-        "name": "evoAccount",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "evoUserIdHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      },
-      {
-        "name": "agentURI",
-        "type": "string",
-        "internalType": "string"
-      },
-      {
-        "name": "metadata",
-        "type": "tuple[]",
-        "internalType": "struct IERC8004IdentityRegistry.MetadataEntry[]",
-        "components": [
-          {
-            "name": "metadataKey",
-            "type": "string",
-            "internalType": "string"
-          },
-          {
-            "name": "metadataValue",
-            "type": "bytes",
-            "internalType": "bytes"
-          }
-        ]
-      }
-    ],
-    "outputs": [
-      {
-        "name": "agentId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "renounceRole",
     "inputs": [
       {

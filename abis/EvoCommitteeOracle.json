@@ -110,6 +110,58 @@
   },
   {
     "type": "function",
+    "name": "MAX_COMMITTEE_MEMBERS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_EPOCHS_LIMIT",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint16",
+        "internalType": "uint16"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_SELECTION_DELAY_BLOCKS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_WINDOW_DURATION",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint64",
+        "internalType": "uint64"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "OUTCOME_INVALID",
     "inputs": [],
     "outputs": [
@@ -237,47 +289,6 @@
       }
     ],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "activateJuror",
-    "inputs": [
-      {
-        "name": "memberTokenId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "activateJurorWithSig",
-    "inputs": [
-      {
-        "name": "memberTokenId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "nonce",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "deadline",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "signature",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -442,6 +453,19 @@
   },
   {
     "type": "function",
+    "name": "getActiveJurorTokenIds",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getChallenge",
     "inputs": [
       {
@@ -575,6 +599,35 @@
         "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getOutcomeApprovalCount",
+    "inputs": [
+      {
+        "name": "predictionId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "resolutionKind",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "winningOptionIndex",
+        "type": "uint8",
+        "internalType": "uint8"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint16",
+        "internalType": "uint16"
       }
     ],
     "stateMutability": "view"
@@ -1278,6 +1331,13 @@
   },
   {
     "type": "function",
+    "name": "initializeV2",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "jurorActivationNonces",
     "inputs": [
       {
@@ -1329,6 +1389,19 @@
   },
   {
     "type": "function",
+    "name": "maxActiveJurors",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "nft",
     "inputs": [],
     "outputs": [
@@ -1336,6 +1409,25 @@
         "name": "",
         "type": "address",
         "internalType": "contract IAgentOwnership"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pendingWithdrawals",
+    "inputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -1559,6 +1651,19 @@
   },
   {
     "type": "function",
+    "name": "setMaxActiveJurors",
+    "inputs": [
+      {
+        "name": "newMax",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "setProtocolConfig",
     "inputs": [
       {
@@ -1624,6 +1729,19 @@
   },
   {
     "type": "function",
+    "name": "setTreasury",
+    "inputs": [
+      {
+        "name": "newTreasury",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "submitJurorResolution",
     "inputs": [
       {
@@ -1681,6 +1799,19 @@
   },
   {
     "type": "function",
+    "name": "treasury",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "upgradeToAndCall",
     "inputs": [
       {
@@ -1696,6 +1827,63 @@
     ],
     "outputs": [],
     "stateMutability": "payable"
+  },
+  {
+    "type": "function",
+    "name": "withdraw",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "BondWithdrawn",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ChallengeBondSettled",
+    "inputs": [
+      {
+        "name": "predictionId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint96",
+        "indexed": false,
+        "internalType": "uint96"
+      },
+      {
+        "name": "challengeUpheld",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
   },
   {
     "type": "event",
@@ -1824,6 +2012,19 @@
         "type": "bool",
         "indexed": false,
         "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MaxActiveJurorsUpdated",
+    "inputs": [
+      {
+        "name": "maxActiveJurors",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -2348,6 +2549,25 @@
   },
   {
     "type": "event",
+    "name": "TreasuryUpdated",
+    "inputs": [
+      {
+        "name": "previousTreasury",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newTreasury",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "Upgraded",
     "inputs": [
       {
@@ -2638,6 +2858,17 @@
   },
   {
     "type": "error",
+    "name": "MaxActiveJurorsReached",
+    "inputs": [
+      {
+        "name": "maxActiveJurors",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "MaxSelectionEpochsExceeded",
     "inputs": [
       {
@@ -2676,6 +2907,11 @@
   {
     "type": "error",
     "name": "NotInitializing",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NothingToWithdraw",
     "inputs": []
   },
   {
@@ -2807,6 +3043,11 @@
   },
   {
     "type": "error",
+    "name": "TreasuryNotSet",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "UUPSUnauthorizedCallContext",
     "inputs": []
   },
@@ -2841,6 +3082,11 @@
         "internalType": "uint8"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "WithdrawTransferFailed",
+    "inputs": []
   },
   {
     "type": "error",
