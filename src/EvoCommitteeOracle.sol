@@ -148,6 +148,11 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     EnumerableSet.UintSet private _activeJurorTokenIds;
     uint256 public maxActiveJurors; // 0 = uncapped
 
+    /// @dev Deprecated: the outcome-key aggregation mechanism these backed was reverted
+    ///      (quorum is decided by strict proposalHash equality via _proposalTallies again) —
+    ///      it let the first submitter's raw values/evidence become the finalized result even
+    ///      when honest submissions differed only in vote values or evidence. Kept only as
+    ///      storage placeholders (UUPS append-only layout) — do not remove or reorder.
     mapping(uint256 => mapping(bytes32 => uint16)) private _outcomeApprovalCounts;
     mapping(uint256 => mapping(bytes32 => bytes32)) private _outcomeCanonicalProposal;
 
@@ -540,26 +545,17 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         }
         tally.approvalCount += 1;
 
-        bytes32 outcomeKey = _outcomeKey(predictionId, resolutionKind, winningOptionIndex, optionVotes.length);
-        if (_outcomeCanonicalProposal[predictionId][outcomeKey] == bytes32(0)) {
-            _outcomeCanonicalProposal[predictionId][outcomeKey] = proposalHash;
-        }
-        uint16 outcomeCount = _outcomeApprovalCounts[predictionId][outcomeKey] + 1;
-        _outcomeApprovalCounts[predictionId][outcomeKey] = outcomeCount;
-
         emit JurorResolutionSubmitted(
             predictionId, memberTokenId, proposalHash, evidenceBundleHash, tally.approvalCount, reserveMember
         );
 
-        if (outcomeCount >= assignment.quorum) {
-            bytes32 canonicalHash = _outcomeCanonicalProposal[predictionId][outcomeKey];
-            ProposalTally storage canonicalTally = _proposalTallies[predictionId][canonicalHash];
+        if (tally.approvalCount >= assignment.quorum) {
             assignment.status = PredictionStatus.PendingFinality;
-            assignment.pendingProposalHash = canonicalHash;
+            assignment.pendingProposalHash = proposalHash;
             assignment.pendingOpenedAt = uint64(block.timestamp);
             assignment.challengeDeadline = uint64(block.timestamp + assignment.challengeWindow);
             emit PendingFinalityOpened(
-                predictionId, canonicalHash, canonicalTally.evidenceBundleHash, assignment.challengeDeadline
+                predictionId, proposalHash, evidenceBundleHash, assignment.challengeDeadline
             );
         }
     }
@@ -723,14 +719,6 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
 
     function getProposalApprovalCount(uint256 predictionId, bytes32 proposalHash) external view returns (uint16) {
         return _proposalTallies[predictionId][proposalHash].approvalCount;
-    }
-
-    function getOutcomeApprovalCount(uint256 predictionId, uint8 resolutionKind, uint8 winningOptionIndex, uint256 optionCount)
-        external
-        view
-        returns (uint16)
-    {
-        return _outcomeApprovalCounts[predictionId][_outcomeKey(predictionId, resolutionKind, winningOptionIndex, optionCount)];
     }
 
     function getChallenge(uint256 predictionId) external view returns (Challenge memory) {
@@ -982,14 +970,6 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
 
     function _legacyNoVotes(uint256[] calldata optionVotes) internal pure returns (uint256) {
         return optionVotes.length > 1 ? optionVotes[1] : 0;
-    }
-
-    function _outcomeKey(uint256 predictionId, uint8 resolutionKind, uint8 winningOptionIndex, uint256 optionCount)
-        internal
-        pure
-        returns (bytes32)
-    {
-        return keccak256(abi.encode(predictionId, resolutionKind, winningOptionIndex, optionCount));
     }
 
     function _consumeRegisterJurorApproval(

@@ -1,43 +1,45 @@
-# ScaleBit 2026-08-21 审计报告回复
+# ScaleBit 2026-08-21 Audit Report Response
 
-对应审计报告：《Neosoul Preliminary Audit Report》（2026-08-21）。
+In response to the *Neosoul Preliminary Audit Report* (2026-08-21).
 
-下表逐条列出每个 finding 的处理结果，Fixed 条目附本仓库对应改动的简述（英文 issue 标题随附于处理说明中，便于审计方与原报告对照）。
+The table below lists our disposition for each finding. Fixed entries include a short description of the corresponding change in this repository (the original English issue title is included for cross-reference with the report).
 
-| ID | Severity | 处理 | 说明 |
-|----|----------|------|------|
-| ECO-1 | Medium | Fixed | *(Inefficient active-juror iteration)* active 陪审员 EnumerableSet 索引替代全量扫描；新增 GOVERNOR 可配的 `maxActiveJurors` 上限（0=不限）。 |
-| ECO-2 | Medium | Fixed | *(Challenge bond has no upside/downside asymmetry)* 挑战成立全额退还保证金（pull-payment）；额外激励暂不引入（挑战者为 CHALLENGE_ROLE 白名单运营方），后续版本再评估。超付说明：`challengePendingResult` 以 `>=` 校验 `msg.value` 并将全额计为 bond（成立全退 / 失败全没）——此为既有行为，非本次改动引入，特此明示以免复审误报为新问题。 |
-| ECO-3 | Major | Fixed | *(No withdrawal path for settled bonds)* 新增 `treasury` + `pendingWithdrawals` + `withdraw()`；应急解决时按结果是否翻转结算退还 / 罚没。活性说明：Challenged 状态的 bond 锁定至 `EMERGENCY_GUARDIAN_ROLE` 行动为止（唯一出口是应急解决；资金可恢复、不会丢失）——此为设计固有约束，运维手册需包含 guardian 响应时限的规定。`pendingWithdrawals` 以**结算时**的 treasury 地址入账；此后更换 treasury 不会迁移已入账余额，故 treasury 必须是长期可用、可收 ETH 的地址。 |
-| ECO-4 | Discussion | Fixed | *(Dual activation entry points with signature reuse ambiguity)* `activateJurorWithSig` 已删除，`SetJurorActive` 签名只剩单一消费者，互换问题不复存在。 |
-| ECO-5 | Medium | Fixed | *(Quorum tally does not key by outcome)* 计票 key 为 (predictionId, resolutionKind, winningOptionIndex, optionVotes.length)，使 `_legacyOutcome` 读取的全部字段均有 quorum 背书；canonical 首提交者仅可提供 evidence 与票数值，不影响 outcome/resolution。 |
-| ECO-7 | Discussion | Acknowledged | *(Retry requires entropy expiry)* 设计确认：重试要求熵过期是刻意的（防止在熵仍可得时重掷）。等待时长按链实测块时间：BSC（Maxwell，~0.75s）256 块 ≈ 3.2 分钟；0G 按其块时间同理，均在可接受范围。 |
-| EBR-8 | Major | Fixed | *(Self-hosted registration bypass)* 删除 `registerAndBind` / `registerAndBindFor` / `setSelfHostedRegistrationEnabled` 及 Router 侧入口；`selfHostedRegistrationEnabled` 变量保留为存储占位。 |
-| ECO-9 | Medium | Partially Fixed | *(Governance config lacks bounds / timelock)* 合约内新增全字段上下界与 primary 严格多数校验；timelock / 多签治理在运维层执行（`GOVERNOR_ROLE` 授予多签），暂不写入合约。 |
-| ECO-10 | Minor | Fixed | *(Redundant no-op writes)* `_setJurorActive` 值未变化时直接 `return`，不写存储不发事件不耗 nonce。 |
-| ECO-11 | Informational | Fixed | *(Redundant activation entry point)* 删除 `activateJuror`，`activateJurorWithSig` 已随 ECO-4 一并删除（两个冗余入口同时移除），仅保留 `setJurorActive` 单一入口。 |
-| EBR-12 | Medium | Fixed | *(Unprotected reinitializer)* `initializeV2` 加 `onlyRole(ADMIN_ROLE)`；fresh 部署脚本在同一 broadcast 内原子调用 `initializeV2`。 |
+| ID | Severity | Status | Notes |
+|----|----------|--------|-------|
+| ECO-1 | Medium | Fixed | *(Inefficient active-juror iteration)* Replaced the full scan with an `EnumerableSet` index of active jurors; added a GOVERNOR-configurable `maxActiveJurors` cap (0 = uncapped). |
+| ECO-2 | Medium | Fixed | *(Challenge bond has no upside/downside asymmetry)* A successful challenge now refunds the bond in full (pull-payment); an additional incentive is deferred (challengers are CHALLENGE_ROLE-whitelisted operators) and will be revisited in a later version. Overpayment note: `challengePendingResult` checks `msg.value` with `>=` and counts the full amount as the bond (fully refunded on success / fully forfeited on failure) — this is pre-existing behavior, not introduced by this change; called out explicitly so re-review doesn't flag it as new. |
+| ECO-3 | Major | Fixed | *(No withdrawal path for settled bonds)* Added `treasury` + `pendingWithdrawals` + `withdraw()`; on emergency resolution the bond is refunded or forfeited depending on whether the outcome flipped. Liveness note: a bond in the `Challenged` state stays locked until `EMERGENCY_GUARDIAN_ROLE` acts (the only exit path is emergency resolution; funds are recoverable, never lost) — this is an inherent design constraint, and the ops runbook must define a guardian response-time SLA. `pendingWithdrawals` credits the treasury address **as of settlement time**; a later `setTreasury` call does not migrate already-credited balances, so the treasury address must be a long-lived one that can receive plain ETH. |
+| ECO-4 | Discussion | Fixed | *(Dual activation entry points with signature reuse ambiguity)* `activateJurorWithSig` has been removed; the `SetJurorActive` signature now has a single consumer, so the reuse ambiguity no longer applies. |
+| ECO-5 | Medium → **Reopened and re-fixed (2026-08-24 re-review)** | Fixed | *(Quorum tally must not decouple vote count from finalized content)* Our original fix (adding `optionVotes.length` to the tally key) only closed the "different length evades aggregation" variant, not the "same length, different values/evidence" variant — the auditor's 2026-08-24 re-review showed that 3 jurors all voting `winningOptionIndex=1` with different `optionVotes`/`evidenceBundleHash` would still be tallied into the same group and, once quorum was reached, the *first* submitter's proposal in that group would become the finalized result — effectively letting a single vote impersonate a quorum-sized consensus. This is a deterministic, reproducible defect (triggerable by any committee member, no privileged role required). We have **fully reverted the outcome-key aggregation mechanism** and restored the strict implementation: quorum is decided by `_proposalTallies[...].approvalCount` keyed on the full `proposalHash` (a hash over `predictionId, resolutionKind, winningOptionIndex, optionVotes, evidenceBundleHash`); only byte-for-byte identical proposals count toward the same tally, and the proposal that itself crosses quorum is the finalized result — there is no longer any "canonical = first submitter" intermediate layer. Trade-off (already noted in the original ECO-5 report, and one we accept): honest jurors whose evidence or exact vote values differ will no longer auto-aggregate, which may trigger `markPredictionStalled` and require emergency intervention; we consider this strictly safer than decoupling the finalized content from the vote count. Added regression test `test_SubmitJurorResolution_SameOptionIndexDifferentVotesDoesNotAggregate`, which reproduces the auditor's exact attack scenario and asserts it no longer aggregates. The storage variables backing ECO-5 (`_outcomeApprovalCounts`/`_outcomeCanonicalProposal`) and the `getOutcomeApprovalCount()` view have been removed (ABI reduction, no external consumers); the storage slots themselves are kept as placeholders per UUPS append-only discipline. |
+| — | Discussion | Acknowledged | *(Is `winningOptionIndex == 0` a valid option?)* No — 0 is a sentinel meaning "no winning option," valid only when `resolutionKind` is `RESOLUTION_VOID`/`RESOLUTION_INVALID`. When `resolutionKind == RESOLUTION_RESOLVED`, `_validateResolution` requires `winningOptionIndex` to fall within `[1, optionVotes.length]`; 0 reverts with `InvalidWinningOptionIndex`. 1-based option indexing is intentional design, not a defect. |
+| ECO-7 | Discussion | Acknowledged | *(Retry requires entropy expiry)* Confirmed by design: requiring entropy to expire before retrying is intentional (it prevents re-rolling while the original entropy is still available). Wait time based on measured on-chain block times: on BSC (post-Maxwell, ~0.75s) 256 blocks ≈ 3.2 minutes; 0G scales similarly with its own block time — both within an acceptable range. |
+| — | Discussion | Answered | *(Does `intakeReasoning()` need a Router entry point?)* It already exists: both `EvoUserActionRouter.intakeReasoning()` (forwarding to `EvoEvolutionRegistry.intakeReasoningFor`) and `intakeReasoningV2()` (forwarding to `intakeReasoningForV2`) are implemented in the code under this audit's scope. If the auditor found a gap in a different version/environment of the code, please share the specific commit so we can check for a version mismatch. |
+| EBR-8 | Major | Fixed | *(Self-hosted registration bypass)* Removed `registerAndBind` / `registerAndBindFor` / `setSelfHostedRegistrationEnabled` and the corresponding Router entry point; `selfHostedRegistrationEnabled` is kept as a storage placeholder. |
+| ECO-9 | Medium | Partially Fixed | *(Governance config lacks bounds / in-flight isolation)* The contract already enforces full-field lower/upper bounds and a strict primary-majority check. The auditor's 2026-08-24 re-review correctly points out that the contract still does not check `_predictionAssignments` state: for predictions already in `Voting`/`PendingFinality`, the `quorum`/`voteWindow`/`graceWindow`/`challengeWindow` are already snapshotted into `PredictionAssignment` at selection-finalize time and are unaffected by a later `setProtocolConfig`; however, `finalizeSelectionForPrediction` (which reads live `primaryCount`/`reserveCount`/`quorum`) during the `SelectionPending` queueing window, and `challengePendingResult` (which reads a live `challengeBond`) during the `PendingFinality` challenge window, can still read a configuration the GOVERNOR changed after the fact — potentially making the queued selection size or the challenge bond inconsistent with what was in effect when the flow started. The attack model requires `GOVERNOR_ROLE` to actively change the configuration; it is not triggerable by an external attacker, and the consequence is unexpected process behavior rather than fund loss or a forged result, so the severity remains Medium. **Remediation commitment**: (1) in a future version, snapshot `primaryCount`/`reserveCount` (used at selection time) and `challengeBond` (used at challenge time) into their respective lifecycle records (`PredictionAssignment`/`Challenge`), so that every prediction is fully isolated from later global config changes from the moment it leaves the terminal state, without needing to restrict when GOVERNOR may change the configuration; (2) migrate `GOVERNOR_ROLE` from a single address to multisig/timelock execution — `initialize()` already allows a multisig contract address to be passed as `initialGovernor` at deploy time, and operations commits to configuring it as a multisig (Safe) or the timelock contract backing `TIMELOCK_EXECUTOR_ROLE`, rather than a single operator key, before mainnet deployment, as the unified mitigation for this and other governance-related findings. |
+| ECO-10 | Minor | Fixed | *(Redundant no-op writes)* `_setJurorActive` now returns early when the value is unchanged, avoiding a redundant storage write, event emission, and nonce consumption. |
+| ECO-11 | Informational | Fixed | *(Redundant activation entry point)* Removed `activateJuror`; `activateJurorWithSig` was already removed alongside ECO-4 (both redundant entry points removed together), leaving `setJurorActive` as the sole entry point. |
+| EBR-12 | Medium | Fixed | *(Unprotected reinitializer)* `initializeV2` now requires `onlyRole(ADMIN_ROLE)`; the fresh-deploy script calls `initializeV2` atomically within the same broadcast. |
 
-## 升级说明
+## Upgrade Notes
 
-执行完代码后、真正在 BSC / 0G 升级时的运维注意：
+Operational notes for when the actual BSC / 0G upgrade is performed, after the code changes above:
 
-1. 选择"安静窗口"升级：链上不存在处于 `Voting` / `PendingFinality` / `Challenged` 状态的 prediction（ECO-5 计票口径切换不兼容在途投票；已有 Challenged 的保证金结算逻辑兼容，无需迁移）。
-2. Oracle 用 `upgradeToAndCall(newImpl, abi.encodeCall(initializeV2, ()))` 原子完成陪审员索引回填。
-3. 升级前确认线上 BindingRegistry proxy 的 `initializeV2` 是否已被调用（0G 已调、BSC 未调则本次补上）；执行账户须持有各 proxy 的 `ADMIN_ROLE`。
-4. 升级完成后（或与升级同一批交易内）由 `ADMIN_ROLE` 调用 `setTreasury(<运营金库地址>)`，并确认该地址能接收 plain ETH 转账；在 treasury 设置之前，任何"挑战被驳回"路径的应急解决会以 `TreasuryNotSet` revert（fail-closed，可恢复）。fresh 部署同理，部署后立即设置。
+1. Pick a "quiet window" for the upgrade: no prediction should be in `Voting` / `PendingFinality` / `Challenged` state on-chain (ECO-5's two tally-semantics changes — first adding outcome-key aggregation, then fully reverting it in favor of strict `proposalHash` tallying — are both incompatible with in-flight historical tally state; existing `Challenged` bond-settlement logic is compatible and needs no migration).
+2. For the Oracle, use `upgradeToAndCall(newImpl, abi.encodeCall(initializeV2, ()))` to atomically backfill the active-juror index.
+3. Before upgrading, confirm whether the live BindingRegistry proxy's `initializeV2` has already been called (already called on 0G; not yet on BSC, so call it as part of this upgrade); the executing account must hold `ADMIN_ROLE` on each proxy.
+4. After the upgrade completes (or within the same batch of transactions as the upgrade), have `ADMIN_ROLE` call `setTreasury(<operations treasury address>)` and confirm that address can receive plain ETH transfers; before the treasury is set, any emergency resolution on a "challenge rejected" path will revert with `TreasuryNotSet` (fail-closed, recoverable). The same applies to fresh deployments — set it immediately after deploying.
 
-## 存储布局升级安全证明
+## Storage Layout Upgrade-Safety Proof
 
-`EvoCommitteeOracle`、`EvoBindingRegistry`、`EvoUserActionRouter` 三份改动前 `forge inspect storage-layout` 基线（`docs/audit/storage-baseline/*.json`，Task 1 生成）与改动后布局逐槽比对，确认所有既有 slot 的 `label`/`slot`/`offset`/`type` 均未变化，仅在 `EvoCommitteeOracle` 尾部追加 6 个新变量：
+We compared the pre-change `forge inspect storage-layout` baselines for `EvoCommitteeOracle`, `EvoBindingRegistry`, and `EvoUserActionRouter` (`docs/audit/storage-baseline/*.json`, generated in Task 1) against the post-change layouts slot by slot, confirming that every existing slot's `label`/`slot`/`offset`/`type` is unchanged, with exactly 6 new variables appended at the tail of `EvoCommitteeOracle`:
 
-| 追加变量 | slot | 说明 |
+| Appended variable | Slot | Notes |
 |----------|------|------|
-| `_activeJurorTokenIds` | 18 | ECO-1，active 陪审员索引 |
-| `maxActiveJurors` | 20 | ECO-1，上限配置 |
-| `_outcomeApprovalCounts` | 21 | ECO-5，按结果 key 的计票 |
-| `_outcomeCanonicalProposal` | 22 | ECO-5，canonical 提案指针 |
-| `treasury` | 23 | ECO-3，国库地址 |
-| `pendingWithdrawals` | 24 | ECO-3，待提现余额 |
+| `_activeJurorTokenIds` | 18 | ECO-1, active-juror index |
+| `maxActiveJurors` | 20 | ECO-1, cap configuration |
+| `_outcomeApprovalCounts` | 21 | **Deprecated**: previously backed ECO-5's outcome-key aggregation tally, which has since been reverted (see the ECO-5 row); kept as a storage placeholder, no longer read or written by any function |
+| `_outcomeCanonicalProposal` | 22 | **Deprecated**: previously backed ECO-5's canonical-proposal pointer, for the same reason as above; likewise kept as a storage placeholder |
+| `treasury` | 23 | ECO-3, treasury address |
+| `pendingWithdrawals` | 24 | ECO-3, pending withdrawal balances |
 
-`EvoBindingRegistry`、`EvoUserActionRouter` 均为 0 追加（本次改动仅删除函数/事件，未新增状态变量）。UUPS 可升级性未被破坏。
+`EvoBindingRegistry` and `EvoUserActionRouter` both have 0 appended variables (these changes only removed functions/events and added no new state variables). UUPS upgradeability is not broken.

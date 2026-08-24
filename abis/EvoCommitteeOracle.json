@@ -605,40 +605,6 @@
   },
   {
     "type": "function",
-    "name": "getOutcomeApprovalCount",
-    "inputs": [
-      {
-        "name": "predictionId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "resolutionKind",
-        "type": "uint8",
-        "internalType": "uint8"
-      },
-      {
-        "name": "winningOptionIndex",
-        "type": "uint8",
-        "internalType": "uint8"
-      },
-      {
-        "name": "optionCount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint16",
-        "internalType": "uint16"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "getPredictionAssignment",
     "inputs": [
       {

@@ -290,7 +290,47 @@ contract EvoCommitteeOracleTest is Test {
         );
     }
 
-    function test_SubmitJurorResolution_SameOutcomeDifferentEvidenceAggregates() public {
+    function test_SubmitJurorResolution_SameOptionIndexDifferentVotesDoesNotAggregate() public {
+        // Reproduces the exact attack scenario the auditor reported: 3 jurors all pick
+        // winningOptionIndex=1, but with different optionVotes values and evidenceBundleHash
+        // (A: [100,0]/0x123, B: [50,50]/0x456, C: [0,100]/0x789). If tallied by an outcomeKey
+        // (only predictionId+resolutionKind+winningOptionIndex(+length)), the three would be
+        // grouped together, reach quorum=3, and the finalized result would be "the first
+        // proposal in that group" — letting A's single vote of [100,0] impersonate a 3-vote
+        // consensus. After the fix, quorum must be decided by the full proposalHash (including
+        // optionVotes and evidence), so these three distinct proposals each stay at 1 vote and
+        // never reach quorum=3.
+        uint256 predictionId = 1;
+        _finalizeSelection(predictionId);
+        uint256[] memory primary = oracle.getPrimaryMembers(predictionId);
+        uint256[] memory reserve = oracle.getReserveMembers(predictionId);
+        uint8 kind = oracle.RESOLUTION_RESOLVED();
+
+        vm.prank(_ownerOfToken(primary[0]));
+        oracle.submitJurorResolution(predictionId, primary[0], kind, 1, _twoOptionVotes(100, 0), bytes32(uint256(0x123)));
+        assertEq(uint8(oracle.getPredictionStatus(predictionId)), uint8(EvoCommitteeOracle.PredictionStatus.Voting));
+
+        vm.prank(_ownerOfToken(primary[1]));
+        oracle.submitJurorResolution(predictionId, primary[1], kind, 1, _twoOptionVotes(50, 50), bytes32(uint256(0x456)));
+        assertEq(uint8(oracle.getPredictionStatus(predictionId)), uint8(EvoCommitteeOracle.PredictionStatus.Voting));
+
+        vm.warp(block.timestamp + oracle.getReserveWindowOpensAt(predictionId));
+        vm.prank(_ownerOfToken(reserve[0]));
+        oracle.submitJurorResolution(predictionId, reserve[0], kind, 1, _twoOptionVotes(0, 100), bytes32(uint256(0x789)));
+
+        // The three proposal hashes are all different; quorum (=2 per _defaultConfig) is
+        // decided purely by a single proposalHash's approvalCount, so each one stays at 1 and
+        // sharing the same winningOptionIndex never merges their tallies.
+        assertEq(uint8(oracle.getPredictionStatus(predictionId)), uint8(EvoCommitteeOracle.PredictionStatus.Voting));
+        bytes32 hashA = oracle.hashCommitteeResolution(predictionId, kind, 1, _twoOptionVotes(100, 0), bytes32(uint256(0x123)));
+        bytes32 hashB = oracle.hashCommitteeResolution(predictionId, kind, 1, _twoOptionVotes(50, 50), bytes32(uint256(0x456)));
+        bytes32 hashC = oracle.hashCommitteeResolution(predictionId, kind, 1, _twoOptionVotes(0, 100), bytes32(uint256(0x789)));
+        assertEq(oracle.getProposalApprovalCount(predictionId, hashA), 1);
+        assertEq(oracle.getProposalApprovalCount(predictionId, hashB), 1);
+        assertEq(oracle.getProposalApprovalCount(predictionId, hashC), 1);
+    }
+
+    function test_SubmitJurorResolution_IdenticalProposalsAggregateToQuorum() public {
         uint256 predictionId = 1;
         _finalizeSelection(predictionId);
         uint256[] memory primary = oracle.getPrimaryMembers(predictionId);
@@ -300,62 +340,24 @@ contract EvoCommitteeOracleTest is Test {
         oracle.submitJurorResolution(predictionId, primary[0], kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
         assertEq(uint8(oracle.getPredictionStatus(predictionId)), uint8(EvoCommitteeOracle.PredictionStatus.Voting));
 
-        // 同一获胜选项、不同 optionVotes、不同 evidence —— 修复前会分裂进不同桶、凑不齐 quorum
+        // Aggregation only happens when everything matches exactly (resolutionKind,
+        // winningOptionIndex, optionVotes, and evidenceBundleHash all identical).
         vm.prank(_ownerOfToken(primary[1]));
-        oracle.submitJurorResolution(predictionId, primary[1], kind, 1, _twoOptionVotes(1, 1), bytes32("evidence-b"));
+        oracle.submitJurorResolution(predictionId, primary[1], kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
 
         assertEq(
             uint8(oracle.getPredictionStatus(predictionId)),
             uint8(EvoCommitteeOracle.PredictionStatus.PendingFinality)
         );
-        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 1, 2), 2);
-
-        // canonical = 第一份提案
-        EvoCommitteeOracle.PredictionAssignment memory a = oracle.getPredictionAssignment(predictionId);
         bytes32 expected =
             oracle.hashCommitteeResolution(predictionId, kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
+        assertEq(oracle.getProposalApprovalCount(predictionId, expected), 2);
+
+        EvoCommitteeOracle.PredictionAssignment memory a = oracle.getPredictionAssignment(predictionId);
         assertEq(a.pendingProposalHash, expected);
     }
 
-    function test_SubmitJurorResolution_DifferentOutcomesDoNotAggregate() public {
-        uint256 predictionId = 1;
-        _finalizeSelection(predictionId);
-        uint256[] memory primary = oracle.getPrimaryMembers(predictionId);
-        uint8 kind = oracle.RESOLUTION_RESOLVED();
-
-        vm.prank(_ownerOfToken(primary[0]));
-        oracle.submitJurorResolution(predictionId, primary[0], kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
-        vm.prank(_ownerOfToken(primary[1]));
-        oracle.submitJurorResolution(predictionId, primary[1], kind, 2, _twoOptionVotes(0, 2), bytes32("evidence-b"));
-
-        assertEq(uint8(oracle.getPredictionStatus(predictionId)), uint8(EvoCommitteeOracle.PredictionStatus.Voting));
-        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 1, 2), 1);
-        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 2, 2), 1);
-    }
-
-    function test_SubmitJurorResolution_DifferentOptionCountDoesNotAggregate() public {
-        uint256 predictionId = 1;
-        _finalizeSelection(predictionId);
-        uint256[] memory primary = oracle.getPrimaryMembers(predictionId);
-        uint8 kind = oracle.RESOLUTION_RESOLVED();
-
-        // 恶意首提交：同一获胜选项但 3 元素票数组（会使 _legacyOutcome 判 INVALID）
-        uint256[] memory threeOptions = new uint256[](3);
-        threeOptions[2] = 1;
-        vm.prank(_ownerOfToken(primary[0]));
-        oracle.submitJurorResolution(predictionId, primary[0], kind, 1, threeOptions, bytes32("evil-evidence"));
-
-        // 诚实提交：2 元素票数组
-        vm.prank(_ownerOfToken(primary[1]));
-        oracle.submitJurorResolution(predictionId, primary[1], kind, 1, _twoOptionVotes(2, 0), bytes32("honest-evidence"));
-
-        // 不同 optionCount 不得聚合成 quorum
-        assertEq(uint8(oracle.getPredictionStatus(predictionId)), uint8(EvoCommitteeOracle.PredictionStatus.Voting));
-        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 1, 3), 1);
-        assertEq(oracle.getOutcomeApprovalCount(predictionId, kind, 1, 2), 1);
-    }
-
-    function test_PendingFinalityOpened_UsesCanonicalEvidence() public {
+    function test_PendingFinalityOpened_UsesQuorumCrossingProposal() public {
         uint256 predictionId = 1;
         _finalizeSelection(predictionId);
         uint256[] memory primary = oracle.getPrimaryMembers(predictionId);
@@ -364,16 +366,16 @@ contract EvoCommitteeOracleTest is Test {
         vm.prank(_ownerOfToken(primary[0]));
         oracle.submitJurorResolution(predictionId, primary[0], kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
 
-        bytes32 canonicalHash =
+        bytes32 proposalHash =
             oracle.hashCommitteeResolution(predictionId, kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
         EvoCommitteeOracle.PredictionAssignment memory a = oracle.getPredictionAssignment(predictionId);
         uint64 expectedDeadline = uint64(block.timestamp + a.challengeWindow);
 
         vm.expectEmit(true, true, true, true, address(oracle));
-        emit EvoCommitteeOracle.PendingFinalityOpened(predictionId, canonicalHash, bytes32("evidence-a"), expectedDeadline);
+        emit EvoCommitteeOracle.PendingFinalityOpened(predictionId, proposalHash, bytes32("evidence-a"), expectedDeadline);
 
         vm.prank(_ownerOfToken(primary[1]));
-        oracle.submitJurorResolution(predictionId, primary[1], kind, 1, _twoOptionVotes(1, 1), bytes32("evidence-b"));
+        oracle.submitJurorResolution(predictionId, primary[1], kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
     }
 
     function test_RetrySelectionAfterEntropyExpires_ThenFinalize() public {
