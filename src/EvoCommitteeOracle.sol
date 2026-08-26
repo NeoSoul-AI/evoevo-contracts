@@ -24,22 +24,20 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     bytes32 public constant CHALLENGE_ROLE = keccak256("CHALLENGE_ROLE");
     bytes32 public constant JUROR_MANAGER_ROLE = keccak256("JUROR_MANAGER_ROLE");
     bytes32 public constant JUROR_APPROVER_ROLE = keccak256("JUROR_APPROVER_ROLE");
-    bytes32 public constant REGISTER_JUROR_TYPEHASH =
+    bytes32 internal constant REGISTER_JUROR_TYPEHASH =
         keccak256("RegisterJuror(address owner,uint256 memberTokenId,bytes32 metadataHash,uint256 nonce,uint256 deadline)");
-    bytes32 public constant SET_JUROR_ACTIVE_TYPEHASH =
-        keccak256("SetJurorActive(address owner,uint256 memberTokenId,bool active,uint256 nonce,uint256 deadline)");
 
-    uint8 public constant OUTCOME_YES = 1;
-    uint8 public constant OUTCOME_NO = 2;
-    uint8 public constant OUTCOME_INVALID = 3;
-    uint8 public constant RESOLUTION_RESOLVED = 1;
-    uint8 public constant RESOLUTION_VOID = 2;
-    uint8 public constant RESOLUTION_INVALID = 3;
+    uint8 internal constant OUTCOME_YES = 1;
+    uint8 internal constant OUTCOME_NO = 2;
+    uint8 internal constant OUTCOME_INVALID = 3;
+    uint8 internal constant RESOLUTION_RESOLVED = 1;
+    uint8 internal constant RESOLUTION_VOID = 2;
+    uint8 internal constant RESOLUTION_INVALID = 3;
 
-    uint256 public constant MAX_COMMITTEE_MEMBERS = 128;
-    uint64 public constant MAX_WINDOW_DURATION = 30 days;
-    uint64 public constant MAX_SELECTION_DELAY_BLOCKS = 100_000;
-    uint16 public constant MAX_EPOCHS_LIMIT = 64;
+    uint256 internal constant MAX_COMMITTEE_MEMBERS = 128;
+    uint64 internal constant MAX_WINDOW_DURATION = 30 days;
+    uint64 internal constant MAX_SELECTION_DELAY_BLOCKS = 100_000;
+    uint16 internal constant MAX_EPOCHS_LIMIT = 64;
 
     enum PredictionStatus {
         Unassigned,
@@ -129,7 +127,7 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     IAgentOwnership public nft;
     ProtocolConfig public protocolConfig;
     mapping(uint256 => uint256) public jurorRegisterNonces;
-    mapping(uint256 => uint256) public jurorActivationNonces;
+    mapping(uint256 => uint256) private jurorActivationNonces; // deprecated placeholder (setJurorActiveWithSig removed)
 
     uint256[] private _jurorTokenIds;
     mapping(uint256 => Juror) private _jurors;
@@ -140,12 +138,12 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     mapping(uint256 => mapping(uint256 => bool)) private _isPredictionPrimaryMember;
     mapping(uint256 => mapping(uint256 => bool)) private _isPredictionReserveMember;
     mapping(uint256 => mapping(uint256 => bytes32)) private _memberSubmissionHashes;
-    mapping(uint256 => mapping(bytes32 => ProposalTally)) private _proposalTallies;
+    mapping(uint256 => mapping(bytes32 => ProposalTally)) internal _proposalTallies;
     mapping(uint256 => Challenge) private _challenges;
     mapping(uint256 => Result) private _results;
 
     // --- v2 appended storage (UUPS append-only; do not reorder) ---
-    EnumerableSet.UintSet private _activeJurorTokenIds;
+    EnumerableSet.UintSet internal _activeJurorTokenIds;
     uint256 public maxActiveJurors; // 0 = uncapped
 
     /// @dev Deprecated: the outcome-key aggregation mechanism these backed was reverted
@@ -173,7 +171,6 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
     );
     event JurorRegistered(uint256 indexed memberTokenId, address indexed owner, bytes32 indexed metadataHash);
     event JurorActiveUpdated(uint256 indexed memberTokenId, bool active);
-    event JurorPenaltyApplied(uint256 indexed memberTokenId, uint64 cooldownUntil, int64 reputationScore);
     event SelectionRequested(uint256 indexed predictionId, uint256 indexed targetBlock, uint16 primaryCount, uint16 reserveCount);
     event PredictionEpochSelectionRequested(
         uint256 indexed predictionId,
@@ -343,9 +340,6 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         emit MaxActiveJurorsUpdated(newMax);
     }
 
-    function getActiveJurorTokenIds() external view returns (uint256[] memory) {
-        return _activeJurorTokenIds.values();
-    }
 
     function setTreasury(address newTreasury) external onlyRole(ADMIN_ROLE) {
         if (newTreasury == address(0)) revert ZeroAddress();
@@ -386,29 +380,7 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         _setJurorActive(memberTokenId, active);
     }
 
-    function setJurorActiveWithSig(
-        uint256 memberTokenId,
-        bool active,
-        uint256 nonce,
-        uint256 deadline,
-        bytes calldata signature
-    ) external {
-        address owner = _assertStrictPredictionTokenOwner(msg.sender, memberTokenId);
-        _consumeSetJurorActiveApproval(owner, memberTokenId, active, nonce, deadline, signature);
-        _setJurorActive(memberTokenId, active);
-    }
 
-    function applyJurorPenalty(uint256 memberTokenId, uint64 cooldownUntil, int64 reputationScoreDelta)
-        external
-        onlyRole(TIMELOCK_EXECUTOR_ROLE)
-    {
-        Juror storage juror = _getJurorStorage(memberTokenId);
-        if (cooldownUntil > juror.cooldownUntil) {
-            juror.cooldownUntil = cooldownUntil;
-        }
-        juror.reputationScore += reputationScoreDelta;
-        emit JurorPenaltyApplied(memberTokenId, juror.cooldownUntil, juror.reputationScore);
-    }
 
     function requestSelectionForPrediction(uint256 predictionId) external onlyRole(AUTOMATION_ROLE) {
         if (predictionId == 0) revert InvalidPredictionId();
@@ -689,9 +661,6 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         return _predictionAssignments[predictionId].status;
     }
 
-    function getProtocolConfig() external view returns (ProtocolConfig memory) {
-        return protocolConfig;
-    }
 
     function getJuror(uint256 memberTokenId) external view returns (Juror memory) {
         return _getJurorStorage(memberTokenId);
@@ -705,6 +674,18 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         return _predictionAssignments[predictionId];
     }
 
+
+
+
+
+    function getChallenge(uint256 predictionId) external view returns (Challenge memory) {
+        return _challenges[predictionId];
+    }
+
+    function getResult(uint256 predictionId) external view returns (Result memory) {
+        return _results[predictionId];
+    }
+
     function getPrimaryMembers(uint256 predictionId) external view returns (uint256[] memory) {
         return _predictionPrimaryMembers[predictionId];
     }
@@ -715,18 +696,6 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
 
     function getMemberSubmissionHash(uint256 predictionId, uint256 memberTokenId) external view returns (bytes32) {
         return _memberSubmissionHashes[predictionId][memberTokenId];
-    }
-
-    function getProposalApprovalCount(uint256 predictionId, bytes32 proposalHash) external view returns (uint16) {
-        return _proposalTallies[predictionId][proposalHash].approvalCount;
-    }
-
-    function getChallenge(uint256 predictionId) external view returns (Challenge memory) {
-        return _challenges[predictionId];
-    }
-
-    function getResult(uint256 predictionId) external view returns (Result memory) {
-        return _results[predictionId];
     }
 
     function getSubmissionWindowClosesAt(uint256 predictionId) public view returns (uint256) {
@@ -765,17 +734,6 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         return _hashTypedDataV4(structHash);
     }
 
-    function hashSetJurorActiveRequest(
-        address owner,
-        uint256 memberTokenId,
-        bool active,
-        uint256 nonce,
-        uint256 deadline
-    ) public view returns (bytes32) {
-        bytes32 structHash =
-            keccak256(abi.encode(SET_JUROR_ACTIVE_TYPEHASH, owner, memberTokenId, active, nonce, deadline));
-        return _hashTypedDataV4(structHash);
-    }
 
     function _setProtocolConfig(ProtocolConfig calldata nextConfig) internal {
         if (
@@ -992,25 +950,6 @@ contract EvoCommitteeOracle is AccessControlUpgradeable, EIP712Upgradeable, IPre
         jurorRegisterNonces[memberTokenId] = expectedNonce + 1;
     }
 
-    function _consumeSetJurorActiveApproval(
-        address owner,
-        uint256 memberTokenId,
-        bool active,
-        uint256 nonce,
-        uint256 deadline,
-        bytes calldata signature
-    ) internal {
-        if (block.timestamp > deadline) revert SignatureExpired(deadline, block.timestamp);
-
-        uint256 expectedNonce = jurorActivationNonces[memberTokenId];
-        if (nonce != expectedNonce) revert InvalidNonce(expectedNonce, nonce);
-
-        bytes32 digest = hashSetJurorActiveRequest(owner, memberTokenId, active, nonce, deadline);
-        (address signer, ECDSA.RecoverError recoverError,) = ECDSA.tryRecoverCalldata(digest, signature);
-        if (recoverError != ECDSA.RecoverError.NoError || !hasRole(JUROR_APPROVER_ROLE, signer)) revert InvalidSignature();
-
-        jurorActivationNonces[memberTokenId] = expectedNonce + 1;
-    }
 
     function _getAssignmentStorage(uint256 predictionId, PredictionStatus expectedStatus)
         internal

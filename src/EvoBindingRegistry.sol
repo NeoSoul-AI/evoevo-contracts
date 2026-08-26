@@ -43,11 +43,21 @@ contract EvoBindingRegistry is Initializable, PausableUpgradeable, AccessControl
     // Binding records keyed by (identityRegistry, agentId) for NON-legacy registries.
     // Legacy-registry bindings remain in `_bindings`.
     mapping(address => mapping(uint256 => BindingRecord)) private _bindingsByRegistry;
-    uint256[47] private __gap;
+
+    // @dev Per-registry pause for NEW binds, keyed by identity-registry address. Default false
+    //      (= enabled) for every registry, so this is orthogonal to `supportedIdentityRegistries`:
+    //      `supportedIdentityRegistries` is default-DENY recognition (also gates downstream
+    //      evolve/judge for non-legacy registries), whereas this is default-ALLOW and ONLY blocks
+    //      FIRST-TIME binds. Existing bindings stay valid, readable, updatable (re-pointing
+    //      evoAccount/evoUserIdHash) and unbindable, so already-bound agents keep evolving/judging.
+    //      Occupies the first slot of the former `uint256[47] __gap` (live on 0G mainnet since 2026-06-24).
+    mapping(address => bool) public bindingDisabledByRegistry;
+    uint256[46] private __gap;
 
     event TrustedRouterUpdated(address indexed oldRouter, address indexed newRouter);
     event PauseUpdated(bool paused);
     event IdentityRegistrySupportUpdated(address indexed identityRegistry, bool supported);
+    event RegistryBindingDisabledUpdated(address indexed identityRegistry, bool disabled);
     // @dev Legacy events. Retained for historical-log ABI decoding; no longer emitted (V2 events replace them).
     event AgentBound(
         uint256 indexed agentId,
@@ -79,6 +89,7 @@ contract EvoBindingRegistry is Initializable, PausableUpgradeable, AccessControl
     error Unauthorized();
     error InvalidRouter(address router);
     error UnsupportedIdentityRegistry(address identityRegistry);
+    error RegistryBindingDisabled(address identityRegistry);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -125,6 +136,21 @@ contract EvoBindingRegistry is Initializable, PausableUpgradeable, AccessControl
 
     function isSupportedIdentityRegistry(address identityRegistry_) external view returns (bool) {
         return supportedIdentityRegistries[identityRegistry_];
+    }
+
+    /// @notice Pause (or resume) NEW binds against a specific identity registry, by address.
+    /// @dev Works uniformly for legacy, public, and any future registry. Only blocks first-time binds;
+    ///      existing bindings remain valid, readable, updatable, and unbindable, so already-bound
+    ///      agents keep evolving/judging and can still re-point their evoAccount. Orthogonal to
+    ///      `setIdentityRegistrySupported`: this does not de-recognize the registry and does not gate
+    ///      downstream evolve/judge -- it is a "stop new binds only" switch.
+    function setRegistryBindingDisabled(address identityRegistry_, bool disabled)
+        external
+        onlyRole(ADMIN_ROLE)
+    {
+        if (identityRegistry_ == address(0)) revert ZeroAddress();
+        bindingDisabledByRegistry[identityRegistry_] = disabled;
+        emit RegistryBindingDisabledUpdated(identityRegistry_, disabled);
     }
 
     /// @notice The legacy self-hosted identity registry (the registry backing `_bindings`).
@@ -315,6 +341,11 @@ contract EvoBindingRegistry is Initializable, PausableUpgradeable, AccessControl
         uint64 currentTimestamp = uint64(block.timestamp);
 
         if (bindingRecord.boundAt == 0) {
+            // First-time bind for this (registry, agent). The per-registry pause blocks NEW binds
+            // only -- single chokepoint covering every entrypoint (legacy, V2, router-forwarded).
+            // Updating an existing binding (re-pointing evoAccount/evoUserIdHash) stays allowed, as
+            // do reads and `unbind`. A fully-unbound agent re-binding counts as new (boundAt == 0).
+            if (bindingDisabledByRegistry[reg]) revert RegistryBindingDisabled(reg);
             bindingRecord.boundAt = currentTimestamp;
         }
 

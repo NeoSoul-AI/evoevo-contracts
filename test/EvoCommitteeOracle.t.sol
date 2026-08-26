@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test, Vm} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "openzeppelin-contracts/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {EnumerableSet} from "openzeppelin-contracts/contracts/utils/structs/EnumerableSet.sol";
 import {IAccessControl} from "openzeppelin-contracts/contracts/access/IAccessControl.sol";
 import {Initializable} from "openzeppelin-contracts/contracts/proxy/utils/Initializable.sol";
 
@@ -44,6 +45,24 @@ contract CommitteeAgentMock {
     }
 }
 
+contract EvoCommitteeOracleHarness is EvoCommitteeOracle {
+    using EnumerableSet for EnumerableSet.UintSet;
+
+    // Test-only accessors for state that the production contract no longer exposes (EIP-170 trim).
+    function getProtocolConfig() external view returns (ProtocolConfig memory) {
+        return protocolConfig;
+    }
+
+    function getProposalApprovalCount(uint256 predictionId, bytes32 proposalHash) external view returns (uint16) {
+        return _proposalTallies[predictionId][proposalHash].approvalCount;
+    }
+
+    function getActiveJurorTokenIds() external view returns (uint256[] memory) {
+        return _activeJurorTokenIds.values();
+    }
+
+}
+
 contract EvoCommitteeOracleUpgradeMock is EvoCommitteeOracle {
     function upgradeVersion() external pure returns (uint256) {
         return 5;
@@ -52,7 +71,12 @@ contract EvoCommitteeOracleUpgradeMock is EvoCommitteeOracle {
 
 contract EvoCommitteeOracleTest is Test {
     CommitteeAgentMock internal agentNFT;
-    EvoCommitteeOracle internal oracle;
+    EvoCommitteeOracleHarness internal oracle;
+
+    uint8 internal constant OUTCOME_YES = 1;
+    uint8 internal constant OUTCOME_INVALID = 3;
+    uint8 internal constant RESOLUTION_RESOLVED = 1;
+    uint8 internal constant RESOLUTION_INVALID = 3;
 
     uint256 internal adminPrivateKey = uint256(keccak256("admin"));
     address internal admin = vm.addr(adminPrivateKey);
@@ -167,22 +191,6 @@ contract EvoCommitteeOracleTest is Test {
         oracle.registerJuror(5, metadataHash, nonce, deadline, signature);
     }
 
-    function test_SetJurorActiveWithSig_WorksForTokenOwner() public {
-        vm.prank(jurorManager);
-        oracle.setJurorActive(1, false);
-
-        uint256 nonce = oracle.jurorActivationNonces(1);
-        uint256 deadline = block.timestamp + 1 days;
-        bytes memory signature = _signSetJurorActive(alice, 1, true, nonce, deadline);
-
-        vm.prank(alice);
-        oracle.setJurorActiveWithSig(1, true, nonce, deadline, signature);
-
-        EvoCommitteeOracle.Juror memory juror = oracle.getJuror(1);
-        assertTrue(juror.active);
-        assertEq(oracle.jurorActivationNonces(1), nonce + 1);
-    }
-
     function test_SetJurorActive_RepeatedCallSkipsWriteAndEvent() public {
         // tokenId 1 已在 setUp 中激活
         vm.recordLogs();
@@ -261,7 +269,7 @@ contract EvoCommitteeOracleTest is Test {
         assertEq(
             oracle.getProposalApprovalCount(
                 predictionId,
-                oracle.hashCommitteeResolution(predictionId, oracle.RESOLUTION_RESOLVED(), 1, optionVotes, evidenceBundleHash)
+                oracle.hashCommitteeResolution(predictionId, RESOLUTION_RESOLVED, 1, optionVotes, evidenceBundleHash)
             ),
             2
         );
@@ -279,14 +287,14 @@ contract EvoCommitteeOracleTest is Test {
 
         (bool resolved, uint8 outcome) = oracle.getPredictionOutcome(predictionId);
         assertTrue(resolved);
-        assertEq(outcome, oracle.OUTCOME_YES());
+        assertEq(outcome, OUTCOME_YES);
         assertEq(uint8(oracle.getPredictionStatus(predictionId)), uint8(EvoCommitteeOracle.PredictionStatus.Finalized));
 
         EvoCommitteeOracle.Result memory result = oracle.getResult(predictionId);
         assertEq(result.evidenceBundleHash, evidenceBundleHash);
         assertEq(
             result.proposalHash,
-            oracle.hashCommitteeResolution(predictionId, oracle.RESOLUTION_RESOLVED(), 1, optionVotes, evidenceBundleHash)
+            oracle.hashCommitteeResolution(predictionId, RESOLUTION_RESOLVED, 1, optionVotes, evidenceBundleHash)
         );
     }
 
@@ -304,7 +312,7 @@ contract EvoCommitteeOracleTest is Test {
         _finalizeSelection(predictionId);
         uint256[] memory primary = oracle.getPrimaryMembers(predictionId);
         uint256[] memory reserve = oracle.getReserveMembers(predictionId);
-        uint8 kind = oracle.RESOLUTION_RESOLVED();
+        uint8 kind = RESOLUTION_RESOLVED;
 
         vm.prank(_ownerOfToken(primary[0]));
         oracle.submitJurorResolution(predictionId, primary[0], kind, 1, _twoOptionVotes(100, 0), bytes32(uint256(0x123)));
@@ -334,7 +342,7 @@ contract EvoCommitteeOracleTest is Test {
         uint256 predictionId = 1;
         _finalizeSelection(predictionId);
         uint256[] memory primary = oracle.getPrimaryMembers(predictionId);
-        uint8 kind = oracle.RESOLUTION_RESOLVED();
+        uint8 kind = RESOLUTION_RESOLVED;
 
         vm.prank(_ownerOfToken(primary[0]));
         oracle.submitJurorResolution(predictionId, primary[0], kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
@@ -361,7 +369,7 @@ contract EvoCommitteeOracleTest is Test {
         uint256 predictionId = 1;
         _finalizeSelection(predictionId);
         uint256[] memory primary = oracle.getPrimaryMembers(predictionId);
-        uint8 kind = oracle.RESOLUTION_RESOLVED();
+        uint8 kind = RESOLUTION_RESOLVED;
 
         vm.prank(_ownerOfToken(primary[0]));
         oracle.submitJurorResolution(predictionId, primary[0], kind, 1, _twoOptionVotes(2, 0), bytes32("evidence-a"));
@@ -484,7 +492,7 @@ contract EvoCommitteeOracleTest is Test {
         uint256 predictionId = 1102;
         bytes32 evidenceBundleHash = keccak256("evidence-bundle-advance");
         uint256[] memory optionVotes = _twoOptionVotes(9, 1);
-        uint8 resolvedKind = oracle.RESOLUTION_RESOLVED();
+        uint8 resolvedKind = RESOLUTION_RESOLVED;
 
         _finalizeSelection(predictionId);
 
@@ -500,7 +508,7 @@ contract EvoCommitteeOracleTest is Test {
 
         (bool resolved, uint8 outcome) = oracle.getPredictionOutcome(predictionId);
         assertTrue(resolved);
-        assertEq(outcome, oracle.OUTCOME_YES());
+        assertEq(outcome, OUTCOME_YES);
         assertEq(uint8(oracle.getPredictionStatus(predictionId)), uint8(EvoCommitteeOracle.PredictionStatus.Finalized));
     }
 
@@ -525,7 +533,7 @@ contract EvoCommitteeOracleTest is Test {
         uint256 predictionId = 2002;
         bytes32 evidenceBundleHash = keccak256("evidence-bundle-b");
         uint256[] memory optionVotes = _twoOptionVotes(2, 7);
-        uint8 resolvedKind = oracle.RESOLUTION_RESOLVED();
+        uint8 resolvedKind = RESOLUTION_RESOLVED;
 
         _finalizeSelection(predictionId);
 
@@ -562,8 +570,8 @@ contract EvoCommitteeOracleTest is Test {
         bytes32 evidenceBundleHash = keccak256("evidence-bundle-c");
         bytes32 challengerEvidenceHash = keccak256("challenger-evidence");
         uint256[] memory optionVotes = _twoOptionVotes(5, 4);
-        uint8 resolvedKind = oracle.RESOLUTION_RESOLVED();
-        uint8 invalidKind = oracle.RESOLUTION_INVALID();
+        uint8 resolvedKind = RESOLUTION_RESOLVED;
+        uint8 invalidKind = RESOLUTION_INVALID;
 
         _finalizeSelection(predictionId);
 
@@ -597,7 +605,7 @@ contract EvoCommitteeOracleTest is Test {
         EvoCommitteeOracle.Result memory result = oracle.getResult(predictionId);
         assertTrue(result.resolved);
         assertTrue(result.emergency);
-        assertEq(result.outcome, oracle.OUTCOME_INVALID());
+        assertEq(result.outcome, OUTCOME_INVALID);
         assertEq(
             uint8(oracle.getPredictionStatus(predictionId)),
             uint8(EvoCommitteeOracle.PredictionStatus.EmergencyResolved)
@@ -655,7 +663,7 @@ contract EvoCommitteeOracleTest is Test {
         oracle.challengePendingResult{value: CHALLENGE_BOND}(predictionId, bytes32("challenge-ev"), bytes32("reason"));
 
         // 应急结果翻转获胜选项 => 挑战成立
-        uint8 resolvedKind = oracle.RESOLUTION_RESOLVED();
+        uint8 resolvedKind = RESOLUTION_RESOLVED;
         vm.prank(emergencyGuardian);
         oracle.emergencyResolvePrediction(
             predictionId, resolvedKind, 2, _twoOptionVotes(0, 2), bytes32("final-ev")
@@ -685,7 +693,7 @@ contract EvoCommitteeOracleTest is Test {
         oracle.challengePendingResult{value: CHALLENGE_BOND}(predictionId, bytes32("challenge-ev"), bytes32("reason"));
 
         // 应急结果与 pending 一致 => 挑战失败
-        uint8 resolvedKind = oracle.RESOLUTION_RESOLVED();
+        uint8 resolvedKind = RESOLUTION_RESOLVED;
         vm.prank(emergencyGuardian);
         oracle.emergencyResolvePrediction(
             predictionId, resolvedKind, 1, _twoOptionVotes(2, 0), bytes32("final-ev")
@@ -708,7 +716,7 @@ contract EvoCommitteeOracleTest is Test {
         vm.prank(challengeOperator);
         oracle.challengePendingResult{value: CHALLENGE_BOND}(predictionId, bytes32("challenge-ev"), bytes32("reason"));
 
-        uint8 resolvedKind = oracle.RESOLUTION_RESOLVED();
+        uint8 resolvedKind = RESOLUTION_RESOLVED;
         vm.prank(emergencyGuardian);
         vm.expectRevert(EvoCommitteeOracle.TreasuryNotSet.selector);
         oracle.emergencyResolvePrediction(
@@ -763,8 +771,8 @@ contract EvoCommitteeOracleTest is Test {
         oracle.setProtocolConfig(config);
     }
 
-    function _deployOracle() internal returns (EvoCommitteeOracle deployed) {
-        EvoCommitteeOracle implementation = new EvoCommitteeOracle();
+    function _deployOracle() internal returns (EvoCommitteeOracleHarness deployed) {
+        EvoCommitteeOracleHarness implementation = new EvoCommitteeOracleHarness();
         bytes memory initData = abi.encodeCall(
             EvoCommitteeOracle.initialize,
             (
@@ -781,7 +789,7 @@ contract EvoCommitteeOracleTest is Test {
             )
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(implementation), initData);
-        deployed = EvoCommitteeOracle(address(proxy));
+        deployed = EvoCommitteeOracleHarness(address(proxy));
     }
 
     function _defaultConfig() internal pure returns (EvoCommitteeOracle.ProtocolConfig memory config) {
@@ -833,16 +841,6 @@ contract EvoCommitteeOracleTest is Test {
         return abi.encodePacked(r, s, v);
     }
 
-    function _signSetJurorActive(address owner, uint256 tokenId, bool active, uint256 nonce, uint256 deadline)
-        internal
-        view
-        returns (bytes memory)
-    {
-        bytes32 digest = oracle.hashSetJurorActiveRequest(owner, tokenId, active, nonce, deadline);
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(jurorApproverPrivateKey, digest);
-        return abi.encodePacked(r, s, v);
-    }
-
     function _submitMatchingPrimaryMembers(
         uint256 predictionId,
         uint256[] memory primaryMembers,
@@ -850,7 +848,7 @@ contract EvoCommitteeOracleTest is Test {
         uint256[] memory optionVotes,
         bytes32 evidenceBundleHash
     ) internal {
-        uint8 resolvedKind = oracle.RESOLUTION_RESOLVED();
+        uint8 resolvedKind = RESOLUTION_RESOLVED;
 
         vm.prank(_ownerOfToken(primaryMembers[0]));
         oracle.submitJurorResolution(

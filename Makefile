@@ -36,3 +36,7 @@ abi-export: build
 	python3 -c "import json; json.dump(json.load(open('out/EvoCommitteeOracle.sol/EvoCommitteeOracle.json'))['abi'], open('abis/EvoCommitteeOracle.json','w'), indent=2)"
 	python3 -c "import json; json.dump(json.load(open('out/EvoPredictionRegistry.sol/EvoPredictionRegistry.json'))['abi'], open('abis/EvoPredictionRegistry.json','w'), indent=2)"
 	python3 -c "import json; json.dump(json.load(open('out/EvoUserActionRouter.sol/EvoUserActionRouter.json'))['abi'], open('abis/EvoUserActionRouter.json','w'), indent=2)"
+
+# Fail if any production contract exceeds the EIP-170 runtime size limit (24,576 bytes).
+check-size:
+	forge build --sizes --skip test --skip script
