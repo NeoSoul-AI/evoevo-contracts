@@ -227,6 +227,73 @@ contract EvoBindingRegistryTest is Test {
         assertEq(EvoBindingRegistryV2(address(bindingRegistry)).version(), 2);
     }
 
+    /// @notice Pausing a registry blocks NEW binds against it but leaves existing bindings valid
+    ///         and still unbindable — the "new binds only" guarantee. Re-enabling restores binding.
+    function test_PauseRegistryBinding_BlocksNewBinds_LeavesExistingValid() public {
+        address reg = address(nft);
+        assertFalse(bindingRegistry.bindingDisabledByRegistry(reg));
+
+        // Existing binding made while the registry is still enabled.
+        vm.prank(alice);
+        uint256 boundAgent = nft.register(URI_1);
+        vm.prank(alice);
+        bindingRegistry.bindExistingAgent(boundAgent, bob, USER_HASH_1);
+        assertTrue(bindingRegistry.isEvoBound(boundAgent));
+
+        // A second agent registered but not yet bound.
+        vm.prank(carol);
+        uint256 freshAgent = nft.register(URI_1);
+
+        // Admin pauses new binds for this registry.
+        vm.prank(admin);
+        bindingRegistry.setRegistryBindingDisabled(reg, true);
+        assertTrue(bindingRegistry.bindingDisabledByRegistry(reg));
+
+        // First-time binds now revert.
+        vm.prank(carol);
+        vm.expectRevert(abi.encodeWithSelector(EvoBindingRegistry.RegistryBindingDisabled.selector, reg));
+        bindingRegistry.bindExistingAgent(freshAgent, carol, USER_HASH_2);
+
+        // Existing binding is untouched: still valid and still readable.
+        assertTrue(bindingRegistry.isEvoBound(boundAgent));
+
+        // The owner can still UPDATE the existing binding (re-point evoAccount) while paused.
+        vm.prank(alice);
+        bindingRegistry.bindExistingAgent(boundAgent, carol, USER_HASH_2);
+        (, address updatedEvoAccount,,,,,) = bindingRegistry.getBinding(boundAgent);
+        assertEq(updatedEvoAccount, carol);
+        assertTrue(bindingRegistry.isEvoBound(boundAgent));
+
+        // And the owner can still unbind it (unbind does not pass through the guard).
+        vm.prank(alice);
+        bindingRegistry.unbind(boundAgent);
+        assertFalse(bindingRegistry.isEvoBound(boundAgent));
+
+        // After a full unbind, re-binding counts as new again -> still blocked while paused.
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(EvoBindingRegistry.RegistryBindingDisabled.selector, reg));
+        bindingRegistry.bindExistingAgent(boundAgent, bob, USER_HASH_1);
+
+        // Re-enabling restores new binds.
+        vm.prank(admin);
+        bindingRegistry.setRegistryBindingDisabled(reg, false);
+        vm.prank(carol);
+        bindingRegistry.bindExistingAgent(freshAgent, carol, USER_HASH_2);
+        assertTrue(bindingRegistry.isEvoBound(freshAgent));
+    }
+
+    function test_RevertIf_SetRegistryBindingDisabled_NonAdmin() public {
+        vm.prank(stranger);
+        vm.expectRevert();
+        bindingRegistry.setRegistryBindingDisabled(address(nft), true);
+    }
+
+    function test_RevertIf_SetRegistryBindingDisabled_ZeroAddress() public {
+        vm.prank(admin);
+        vm.expectRevert(EvoBindingRegistry.ZeroAddress.selector);
+        bindingRegistry.setRegistryBindingDisabled(address(0), true);
+    }
+
     function _emptyMetadata() internal pure returns (IERC8004IdentityRegistry.MetadataEntry[] memory metadata) {
         metadata = new IERC8004IdentityRegistry.MetadataEntry[](0);
     }

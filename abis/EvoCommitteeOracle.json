@@ -110,162 +110,6 @@
   },
   {
     "type": "function",
-    "name": "MAX_COMMITTEE_MEMBERS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "MAX_EPOCHS_LIMIT",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint16",
-        "internalType": "uint16"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "MAX_SELECTION_DELAY_BLOCKS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint64",
-        "internalType": "uint64"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "MAX_WINDOW_DURATION",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint64",
-        "internalType": "uint64"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "OUTCOME_INVALID",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "OUTCOME_NO",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "OUTCOME_YES",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "REGISTER_JUROR_TYPEHASH",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "RESOLUTION_INVALID",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "RESOLUTION_RESOLVED",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "RESOLUTION_VOID",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint8",
-        "internalType": "uint8"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "SET_JUROR_ACTIVE_TYPEHASH",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "TIMELOCK_EXECUTOR_ROLE",
     "inputs": [],
     "outputs": [
@@ -289,29 +133,6 @@
       }
     ],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "applyJurorPenalty",
-    "inputs": [
-      {
-        "name": "memberTokenId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "cooldownUntil",
-        "type": "uint64",
-        "internalType": "uint64"
-      },
-      {
-        "name": "reputationScoreDelta",
-        "type": "int64",
-        "internalType": "int64"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -450,19 +271,6 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "getActiveJurorTokenIds",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -787,95 +595,6 @@
   },
   {
     "type": "function",
-    "name": "getProposalApprovalCount",
-    "inputs": [
-      {
-        "name": "predictionId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "proposalHash",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint16",
-        "internalType": "uint16"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getProtocolConfig",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct EvoCommitteeOracle.ProtocolConfig",
-        "components": [
-          {
-            "name": "primaryCount",
-            "type": "uint16",
-            "internalType": "uint16"
-          },
-          {
-            "name": "reserveCount",
-            "type": "uint16",
-            "internalType": "uint16"
-          },
-          {
-            "name": "quorum",
-            "type": "uint16",
-            "internalType": "uint16"
-          },
-          {
-            "name": "selectionDelayBlocks",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "voteWindow",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "graceWindow",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "challengeWindow",
-            "type": "uint64",
-            "internalType": "uint64"
-          },
-          {
-            "name": "challengeBond",
-            "type": "uint96",
-            "internalType": "uint96"
-          },
-          {
-            "name": "policyHash",
-            "type": "bytes32",
-            "internalType": "bytes32"
-          },
-          {
-            "name": "maxEpochs",
-            "type": "uint16",
-            "internalType": "uint16"
-          }
-        ]
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "getReserveMembers",
     "inputs": [
       {
@@ -1153,45 +872,6 @@
   },
   {
     "type": "function",
-    "name": "hashSetJurorActiveRequest",
-    "inputs": [
-      {
-        "name": "owner",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "memberTokenId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "active",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "nonce",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "deadline",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "initialize",
     "inputs": [
       {
@@ -1306,25 +986,6 @@
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "jurorActivationNonces",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -1582,39 +1243,6 @@
         "name": "active",
         "type": "bool",
         "internalType": "bool"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setJurorActiveWithSig",
-    "inputs": [
-      {
-        "name": "memberTokenId",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "active",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "nonce",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "deadline",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "signature",
-        "type": "bytes",
-        "internalType": "bytes"
       }
     ],
     "outputs": [],
@@ -1890,31 +1518,6 @@
         "type": "bool",
         "indexed": false,
         "internalType": "bool"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "JurorPenaltyApplied",
-    "inputs": [
-      {
-        "name": "memberTokenId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "cooldownUntil",
-        "type": "uint64",
-        "indexed": false,
-        "internalType": "uint64"
-      },
-      {
-        "name": "reputationScore",
-        "type": "int64",
-        "indexed": false,
-        "internalType": "int64"
       }
     ],
     "anonymous": false
