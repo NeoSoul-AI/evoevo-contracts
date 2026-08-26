@@ -134,6 +134,20 @@ contract EvoUserActionRouterTest is Test {
         assertTrue(bindingRegistry.isEvoBound(agentId));
     }
 
+    /// @notice Pausing a registry on the binding registry propagates through the router's forwarder
+    ///         (the router holds no binding logic; it reverts transitively at `_bindV2`).
+    function test_BindExistingAgent_RevertsWhenRegistryBindingPaused() public {
+        vm.prank(alice);
+        uint256 agentId = nft.register(URI_1);
+
+        vm.prank(admin);
+        bindingRegistry.setRegistryBindingDisabled(address(nft), true);
+
+        vm.prank(alice);
+        vm.expectRevert(abi.encodeWithSelector(EvoBindingRegistry.RegistryBindingDisabled.selector, address(nft)));
+        router.bindExistingAgent(agentId, bob, bytes32(uint256(202)));
+    }
+
     function test_IntakeReasoning_RoutedActorPreserved() public {
         _registerAndBindViaRouter(alice, URI_1);
 

@@ -20,6 +20,37 @@ The table below lists our disposition for each finding. Fixed entries include a 
 | ECO-11 | Informational | Fixed | *(Redundant activation entry point)* Removed `activateJuror`; `activateJurorWithSig` was already removed alongside ECO-4 (both redundant entry points removed together), leaving `setJurorActive` as the sole entry point. |
 | EBR-12 | Medium | Fixed | *(Unprotected reinitializer)* `initializeV2` now requires `onlyRole(ADMIN_ROLE)`; the fresh-deploy script calls `initializeV2` atomically within the same broadcast. |
 
+## EIP-170 Contract Size Fix (2026-08-26)
+
+The audit-fix build of `EvoCommitteeOracle` measured **26,321 bytes** of runtime code (solc 0.8.24, via-IR, 200 runs), 1,745 bytes over the EIP-170 limit enforced by BSC and 0G. Compiler settings alone cannot close the gap (`optimizer_runs = 1` still leaves 25,151), and splitting pure helpers into an external library measured *larger* (call-site ABI encoding outweighs the moved code). We therefore removed surface area that has no on-chain usage and no downstream consumer. **ECO-1, ECO-3 and ECO-9 fixes are retained in full**; storage layout is unchanged.
+
+Evidence: all 5,786 transactions sent to the 0G mainnet oracle proxy since deployment (blocks 30,775,694 → 42,687,827) were aggregated by function selector; every removed entry point has zero calls. Downstream services (lifefun-api, lifefun-ops, evo-oracle-committee-runtime, evo-cli, signer-gateway, indexer, frontend) were grepped for every removed symbol.
+
+| Change | Rationale |
+|---|---|
+| Removed `setJurorActiveWithSig`, `hashSetJurorActiveRequest`, `_consumeSetJurorActiveApproval`, `SET_JUROR_ACTIVE_TYPEHASH` | 0 on-chain calls; all activations went through `setJurorActive` (JUROR_MANAGER_ROLE). `jurorActivationNonces` is kept as a private storage placeholder. |
+| Removed `applyJurorPenalty` and `JurorPenaltyApplied` | 0 on-chain calls; `reputationScore` is never read by contract logic; `setJurorActive(id,false)` covers exclusion. `Juror.cooldownUntil/reputationScore` fields kept. |
+| Removed `getProtocolConfig()` | Duplicate of the auto-generated `protocolConfig()` getter (identical tuple). |
+| Removed `getProposalApprovalCount`, `getActiveJurorTokenIds` | No consumers; data available from `JurorResolutionSubmitted.approvalCount` / `JurorActiveUpdated`. |
+| `OUTCOME_*`, `RESOLUTION_*`, `REGISTER_JUROR_TYPEHASH`, `MAX_*` constants → `internal` | Getters unused; values unchanged. |
+| Kept `getPrimaryMembers`, `getReserveMembers`, `getMemberSubmissionHash`, `hashRegisterJurorRequest` (public), `retrySelectionForPrediction` | Consumed by lifefun-api / lifefun-ops / committee runtime submission path / committeectl signing; `retrySelectionForPrediction` has 91 mainnet calls. |
+
+Result: **24,091 bytes** (485 bytes of headroom). `make check-size` (`forge build --sizes --skip test --skip script`) is added to guard the limit. Test-only accessors for the removed getters live in `EvoCommitteeOracleHarness` inside `test/EvoCommitteeOracle.t.sol`; the production contract does not include them.
+
+## EvoBindingRegistry: Per-Registry New-Bind Pause (retained, 2026-08-26)
+
+The 0G mainnet `EvoBindingRegistry` proxy (`0x1C00a704…33f29eF`) runs an implementation (deployed 2026-06-24, lifefun-contracts commit `aca9b85`) that adds a per-registry "pause new binds" switch on top of the dual-registry version the audit baseline was taken from. This switch is **currently active** on 0G (`bindingDisabledByRegistry(0x8004Ae53…) == true`, blocking first-time binds against the legacy registry). To keep that operational state across the upgrade, the same code is re-applied on top of the audited contract:
+
+| Item | Detail |
+|---|---|
+| Storage | `mapping(address => bool) public bindingDisabledByRegistry` at slot 6 — the first slot of the audited `uint256[47] __gap`, which becomes `uint256[46]`. Slots 0–5 unchanged; identical to the live 0G layout. On BSC (never upgraded past the initial version) the slot is simply unused-then-claimed. |
+| Admin | `setRegistryBindingDisabled(address,bool)` — `ADMIN_ROLE`, rejects `address(0)`, emits `RegistryBindingDisabledUpdated`. |
+| Enforcement | Single check in `_bindV2` on the `boundAt == 0` branch: `if (bindingDisabledByRegistry[reg]) revert RegistryBindingDisabled(reg);`. Blocks **first-time** binds only; existing bindings remain valid, readable, re-pointable and unbindable, so bound agents keep evolving/judging. A fully unbound agent re-binding counts as new. |
+| Scope | Orthogonal to `supportedIdentityRegistries` (default-deny recognition) — this is a default-allow, new-binds-only switch. |
+| Tests | `test_PauseRegistryBinding_BlocksNewBinds_LeavesExistingValid`, `test_RevertIf_SetRegistryBindingDisabled_NonAdmin`, `test_RevertIf_SetRegistryBindingDisabled_ZeroAddress`, `test_BindExistingAgent_RevertsWhenRegistryBindingPaused` (router pass-through). |
+
+This block is the only logic in the upgrade set that was not part of the 2026-08-21 review scope and is flagged for re-review.
+
 ## Upgrade Notes
 
 Operational notes for when the actual BSC / 0G upgrade is performed, after the code changes above:
